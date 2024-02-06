@@ -17,6 +17,7 @@ struct CameraView: View {
                 
                 CameraViewController()
                     .environmentObject(viewModel)
+                    .onTapGesture(count: 2) { flipCamera() }
                     .edgesIgnoringSafeArea(.all)
             } else {
                 CameraResultView(url: viewModel.previewURL)
@@ -39,8 +40,7 @@ struct CameraView: View {
                         Spacer()
                         
                         Button {
-                            viewModel.position = viewModel.position == .back ? .front : .back
-                            viewModel.reconfigure()
+                            flipCamera()
                         } label: {
                             Image(systemName: "arrow.triangle.2.circlepath.camera.fill")
                                 .foregroundColor(.black)
@@ -54,33 +54,68 @@ struct CameraView: View {
                     
                     Spacer()
                     
-                    HStack(alignment: .center) {
+                    HStack(alignment: .bottom) {
                         Button {
-                            if viewModel.isVideo {
-                                viewModel.stopRecording()
-                                // in the end of taking video -> camera.video need to become false again
-                            } else {
-                                viewModel.takeShoot()
-                            }
+                            print("effect")
                         } label: {
-                            ZStack {
-                                Circle()
-                                    .fill(viewModel.isVideo ? .red : .white)
-                                    .frame(width: viewModel.isVideo ? 95 : 75, height: viewModel.isVideo ? 95 : 75)
-                                
-                                Circle()
-                                    .stroke(viewModel.isVideo ? .red : .white, lineWidth: 2)
-                                    .frame(width: viewModel.isVideo ? 105 : 85, height: viewModel.isVideo ? 105 : 85)
-                            }
-                            
+                            Rectangle()
+                                .frame(width: 50, height: 50)
                         }
-                        .simultaneousGesture(
-                            LongPressGesture(minimumDuration: 0.4).onEnded({ value in
-                                viewModel.isVideo = true
-                                viewModel.startRecordinng()
-                            })
-                        )
-                        .buttonStyle(.plain)
+                        .padding(.bottom, 14)
+                        
+                        Spacer()
+
+                        VStack(spacing: 10) {
+                            Text("Hold to record")
+                                .foregroundColor(.white.opacity(0.8))
+                                .font(.system(size: 12, weight: .light, design: .rounded))
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 9)
+                                .background {
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .fill(.black.opacity(0.2))
+                                }
+                            
+                            Button {
+                                if viewModel.isVideo {
+                                    viewModel.stopRecording()
+                                    // in the end of taking video -> camera.video need to become false again
+                                } else {
+                                    viewModel.takeShoot()
+                                }
+                            } label: {
+                                ZStack {
+                                    Circle()
+                                        .fill(viewModel.isVideo ? Constants.redColor : .white)
+                                        .frame(width: viewModel.isVideo ? 85 : 70, height: viewModel.isVideo ? 85 : 70)
+                                    
+                                    Circle()
+                                        .stroke(viewModel.isVideo ? Constants.redColor.opacity(0.5) : .white.opacity(0.5), lineWidth: 6)
+                                        .frame(width: viewModel.isVideo ? 100 : 85, height: viewModel.isVideo ? 100 : 85)
+                                }
+                                
+                            }
+                            .simultaneousGesture(
+                                LongPressGesture(minimumDuration: 0.4).onEnded({ value in
+                                    withAnimation {
+                                        viewModel.isVideo = true
+                                    }
+                                    
+                                    viewModel.startRecordinng()
+                                })
+                            )
+                            .buttonStyle(.plain)
+                        }
+                        
+                        Spacer()
+                        
+                        Button {
+                            print("Gallery")
+                        } label: {
+                            Rectangle()
+                                .frame(width: 50, height: 50)
+                        }
+                        .padding(.bottom, 14)
                     }
                     .padding(.bottom)
                 } else {
@@ -155,5 +190,10 @@ struct CameraView: View {
                 viewModel.stopRecording()
             }
         }
+    }
+    
+    private func flipCamera() {
+        viewModel.position = viewModel.position == .back ? .front : .back
+        viewModel.reconfigure()
     }
 }

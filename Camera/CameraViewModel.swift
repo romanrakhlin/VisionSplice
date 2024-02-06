@@ -173,11 +173,13 @@ class CameraViewModel: NSObject, ObservableObject {
     }
     
     public func retakeShoot() {
-        isVideo = false
-        recordedDuration = 0
-        mediaData = Data(count: 0)
-        previewURL = nil
-        isFinished = false
+        withAnimation {
+            isVideo = false
+            recordedDuration = 0
+            mediaData = Data(count: 0)
+            previewURL = nil
+            isFinished = false
+        }
     }
     
     public func startRecordinng() {

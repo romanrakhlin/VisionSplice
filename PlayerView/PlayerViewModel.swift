@@ -9,7 +9,7 @@ import SwiftUI
 import Combine
 import AVFoundation
 
-class PlayerViewModel: NSObject, ObservableObject {
+final class PlayerViewModel: NSObject, ObservableObject {
     
     @Published var player = AVPlayer()
     @Published var shouldPlay = false

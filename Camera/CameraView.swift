@@ -3,7 +3,7 @@ import SwiftUI
 struct CameraView: View {
     
     @Environment(\.presentationMode) var presentationMode
-    @StateObject private var viewModel = CameraViewModel()
+    @EnvironmentObject var viewModel: CameraViewModel
     
     let action: (URL, Data) -> Void
     
@@ -11,7 +11,10 @@ struct CameraView: View {
     
     public var body: some View {
         ZStack {
-            if !viewModel.isTaken {
+            if !viewModel.isFinished {
+                ProgressView()
+                    .progressViewStyle(.circular)
+                
                 CameraViewController()
                     .environmentObject(viewModel)
                     .edgesIgnoringSafeArea(.all)
@@ -21,7 +24,7 @@ struct CameraView: View {
             }
             
             VStack {
-                if !viewModel.isTaken {
+                if !viewModel.isFinished {
                     HStack {
                         Button {
                             presentationMode.wrappedValue.dismiss()
@@ -37,7 +40,7 @@ struct CameraView: View {
                         
                         Button {
                             viewModel.position = viewModel.position == .back ? .front : .back
-                            viewModel.setUp()
+                            viewModel.reconfigure()
                         } label: {
                             Image(systemName: "arrow.triangle.2.circlepath.camera.fill")
                                 .foregroundColor(.black)
@@ -53,33 +56,28 @@ struct CameraView: View {
                     
                     HStack(alignment: .center) {
                         Button {
-                            if viewModel.video {
+                            if viewModel.isVideo {
                                 viewModel.stopRecording()
                                 // in the end of taking video -> camera.video need to become false again
                             } else {
-                                viewModel.takePic()
+                                viewModel.takeShoot()
                             }
                         } label: {
                             ZStack {
                                 Circle()
-                                    .fill(viewModel.video ? .red : .white)
-                                    .frame(width: viewModel.video ? 95 : 75, height: viewModel.video ? 95 : 75)
+                                    .fill(viewModel.isVideo ? .red : .white)
+                                    .frame(width: viewModel.isVideo ? 95 : 75, height: viewModel.isVideo ? 95 : 75)
                                 
                                 Circle()
-                                    .stroke(viewModel.video ? .red : .white, lineWidth: 2)
-                                    .frame(width: viewModel.video ? 105 : 85, height: viewModel.video ? 105 : 85)
+                                    .stroke(viewModel.isVideo ? .red : .white, lineWidth: 2)
+                                    .frame(width: viewModel.isVideo ? 105 : 85, height: viewModel.isVideo ? 105 : 85)
                             }
                             
                         }
                         .simultaneousGesture(
                             LongPressGesture(minimumDuration: 0.4).onEnded({ value in
-                                if viewModel.recordPermission == .granted {
-                                    withAnimation {
-                                        viewModel.video = true
-                                        viewModel.setUp()
-                                        viewModel.startRecordinng()
-                                    }
-                                }
+                                viewModel.isVideo = true
+                                viewModel.startRecordinng()
                             })
                         )
                         .buttonStyle(.plain)
@@ -88,7 +86,7 @@ struct CameraView: View {
                 } else {
                     HStack {
                         Button {
-                            viewModel.retakePic()
+                            viewModel.retakeShoot()
                         } label: {
                             Image(systemName: "chevron.backward")
                                 .foregroundColor(.black)
@@ -126,15 +124,27 @@ struct CameraView: View {
             .padding(.horizontal)
         }
         .onAppear {
-            viewModel.checkPermission()
-            viewModel.checkAudioPermission()
+            viewModel.controllSession(start: true)
         }
-        .alert(isPresented: $viewModel.alert) {
-            Alert(title: Text(NSLocalizedString("youFoundInterlocutor", comment: "")),
-                  primaryButton: .default(Text(NSLocalizedString("goToSettings", comment: "")), action: {
-                UIApplication.shared.open(URL(string: UIApplication.openSettingsURLString)!)
-            }),
-                  secondaryButton: .cancel(Text(NSLocalizedString("cancel", comment: ""))))
+        .onDisappear {
+            viewModel.controllSession(start: false)
+        }
+        .alert(isPresented: $viewModel.showAlert) {
+            if viewModel.alertIncludeSettings {
+                Alert(
+                    title: Text(viewModel.alertText),
+                    primaryButton: .default(
+                        Text("Allow Aceess"),
+                        action: { UIApplication.shared.open(URL(string: UIApplication.openSettingsURLString)!) }
+                    ),
+                    secondaryButton: .cancel(Text("Cancel"))
+                )
+            } else {
+                Alert(
+                    title: Text(viewModel.alertText),
+                    dismissButton: .cancel(Text("OK"))
+                )
+            }
         }
         .onReceive(Timer.publish(every: 0.01, on: .main, in: .common).autoconnect()) { _ in
             if viewModel.recordedDuration <= Double(maxVideoDuration) && viewModel.isRecording {

@@ -33,8 +33,8 @@ let package = Package(
                 .portraitUpsideDown(.when(deviceFamilies: [.pad]))
             ],
             capabilities: [
-                .camera(purposeString: "Unknown Usage"),
-                .microphone(purposeString: "Unknown Usage Description")
+                .camera(purposeString: "Please allow camera access"),
+                .microphone(purposeString: "Please allow microphone access")
             ],
             appCategory: .utilities
         )

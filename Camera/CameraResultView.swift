@@ -33,7 +33,6 @@ public struct CameraResultView: View {
                 }
             }
             .frame(width: proxy.size.width, height: proxy.size.height)
-//            .background(Color.black)
         }
     }
 }

@@ -1,10 +1,25 @@
 import SwiftUI
 
-struct ContentView: View {
+struct ProjectsView: View {
+    
+    @StateObject private var cameraViewModel = CameraViewModel()
+    
+    @State private var isCreatePressed = false
+    
     var body: some View {
-        CameraView(action: { url, data in
-            print(url)
-            print(data.count)
-        })
+        VStack {
+            Button {
+                isCreatePressed.toggle()
+            } label: {
+                Text("Press me")
+            }
+        }
+        .fullScreenCover(isPresented: $isCreatePressed) {
+            CameraView(action: { url, data in
+                print(url)
+                print(data.count)
+            })
+            .environmentObject(cameraViewModel)
+        }
     }
 }

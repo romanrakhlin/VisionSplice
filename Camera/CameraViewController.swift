@@ -1,10 +1,3 @@
-//
-//  CameraViewController.swift
-//  CustomCameraApp
-//
-//  Created by Karen Mirakyan on 09.05.22.
-//
-
 import Foundation
 import SwiftUI
 import AVFoundation
@@ -17,7 +10,10 @@ public struct CameraViewController: UIViewRepresentable {
         let view = UIView(frame: UIScreen.main.bounds)
         
         DispatchQueue.main.async {
-            camera.preview = AVCaptureVideoPreviewLayer(session: camera.session)
+            if camera.preview == nil {
+                camera.preview = AVCaptureVideoPreviewLayer(session: camera.session)
+            }
+            
             camera.preview.frame = view.frame
             camera.preview.videoGravity = .resizeAspectFill
             

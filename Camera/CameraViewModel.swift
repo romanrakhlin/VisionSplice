@@ -166,7 +166,7 @@ class CameraViewModel: NSObject, ObservableObject {
             self.photoOutput.capturePhoto(with: AVCapturePhotoSettings(), delegate: self)
             DispatchQueue.main.async {
                 withAnimation {
-                    self.isFinished.toggle()
+                    self.isFinished = true
                 }
             }
         }

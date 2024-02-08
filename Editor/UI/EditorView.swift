@@ -13,7 +13,13 @@ struct EditorView: View {
     
 //    @State private var isCreatePressed = false
     
-    @State var frames: [Int] = [1, 2, 3, 4, 5]
+    @StateObject private var videoModel = VideoModel()
+    
+    @State var frames: [String] = ["1", "2", "3", "4"]
+    @State var selectedFrame: FrameItem?
+    @State var draggedItem: FrameItem?
+    
+    @State var isActionsSheetPresented = false
     
     var body: some View {
         VStack {
@@ -40,34 +46,48 @@ struct EditorView: View {
                     print("Close")
                 } label: {
                     Text("Create")
-                        .font(.system(size: 18, weight: .bold, design: .rounded))
+                        .font(.system(size: 20, weight: .bold, design: .rounded))
                         .foregroundColor(Constants.primaryColor)
                 }
             }
+            .padding(.top, 10)
             .padding(.horizontal, 20)
             
             ZStack {
-                RoundedRectangle(cornerRadius: 14)
-                    .fill(Constants.secondaryColor)
-            }
-            .padding(.top, 20)
-            .padding(.horizontal, 80)
-            
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 18) {
-                    ForEach(frames.indices) { _ in
-                        ZStack {
-                            RoundedRectangle(cornerRadius: 10)
-                                .fill(Constants.secondaryColor)
-                                .frame(width: UIDevice.current.userInterfaceIdiom == .pad ? 120 : 60)
-                                .frame(height: UIDevice.current.userInterfaceIdiom == .pad ? 160 : 80)
-                        }
-                    }
+                ZStack {
+                    RoundedRectangle(cornerRadius: 14)
+                        .fill(Constants.secondaryColor)
                 }
-                .padding(.horizontal, 20)
+                .padding(.top, 20)
+                .padding(.horizontal, 80)
+                
+                HStack(alignment: .center) {
+                    Button {
+                        print("Pick music")
+                    } label: {
+                        Image(systemName: "music.note")
+                            .font(.system(size: 20, weight: .bold, design: .rounded))
+                            .foregroundColor(.white)
+                            .padding()
+                            .background {
+                                Circle()
+                                    .fill(Constants.primaryColor)
+                                    .frame(width: 38, height: 38)
+                            }
+                    }
+
+                    
+                    Spacer()
+                }
+                .padding(.leading, 10)
             }
-            .padding(.top, 20)
-            .padding(.bottom)
+            
+            FramesCarouselView(
+                videoModel: videoModel, 
+                selectedFrame: $selectedFrame,
+                draggedItem: $draggedItem,
+                isActionsSheetPresented: $isActionsSheetPresented
+            )
         }
         .background(Constants.backgroundColor)
 //        .fullScreenCover(isPresented: $isCreatePressed) {

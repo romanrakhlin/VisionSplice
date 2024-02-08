@@ -13,13 +13,18 @@ struct EditorView: View {
     
 //    @State private var isCreatePressed = false
     
+    var sourceItem: FrameItemSource
+    
     @StateObject private var videoModel = VideoModel()
+    @StateObject private var playerViewModel = VideoPlayerViewModel()
     
     @State var frames: [String] = ["1", "2", "3", "4"]
     @State var selectedFrame: FrameItem?
     @State var draggedItem: FrameItem?
     
     @State var isActionsSheetPresented = false
+    
+    @State private var playerView: VideoPlayerView?
     
     var body: some View {
         VStack {
@@ -55,9 +60,26 @@ struct EditorView: View {
             
             ZStack {
                 ZStack {
-                    RoundedRectangle(cornerRadius: 14)
-                        .fill(Constants.secondaryColor)
+                    if playerViewModel.assetState != .ready {
+                        HStack {
+                            Spacer()
+                            
+                            VStack {
+                                Spacer()
+                                
+                                ProgressView()
+                                
+                                Spacer()
+                            }
+                            
+                            Spacer()
+                        }
+                    } else {
+                        playerView
+                    }
                 }
+                .background(Constants.secondaryColor)
+                .cornerRadius(10)
                 .padding(.top, 20)
                 .padding(.horizontal, 80)
                 
@@ -75,7 +97,6 @@ struct EditorView: View {
                                     .frame(width: 38, height: 38)
                             }
                     }
-
                     
                     Spacer()
                 }
@@ -90,6 +111,10 @@ struct EditorView: View {
             )
         }
         .background(Constants.backgroundColor)
+        .onAppear {
+            playerView = VideoPlayerView(model: playerViewModel)
+            setupVideoModel(with: sourceItem)
+        }
 //        .fullScreenCover(isPresented: $isCreatePressed) {
 //            CameraView(action: { url, data in
 //                print(url)
@@ -97,5 +122,27 @@ struct EditorView: View {
 //            })
 //            .environmentObject(cameraViewModel)
 //        }
+    }
+    
+    private func setupVideoModel(with sourceItem: FrameItemSource) {
+        Task(priority: .userInitiated) {
+            do {
+                try await videoModel.append(from: sourceItem)
+                try await videoModel.appendEmptyItem()
+            } catch {
+                let nsError = error as NSError
+
+                let description = nsError.localizedRecoverySuggestion ?? nsError
+                    .localizedDescription
+
+                // TODO: - show fail alert here
+                assertionFailure(error.localizedDescription)
+            }
+
+            await MainActor.run {
+                let previewPlayerItem = videoModel.createPlayerItem
+                playerViewModel.playerItem = previewPlayerItem
+            }
+        }
     }
 }

@@ -19,8 +19,8 @@ struct FramesCarouselView: View {
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 18) {
-                ForEach(Array(videoModel.dummyItems.enumerated()), id: \.offset) { index, item in
-                    FramesCarouselItemView(thumbnailGeneration: item.generateThumbnail)
+                ForEach(Array(videoModel.items.enumerated()), id: \.offset) { index, item in
+                    FramesCarouselItemView(frame: item)
                         .onTapGesture {
                             selectedFrame = item
                             isActionsSheetPresented.toggle()

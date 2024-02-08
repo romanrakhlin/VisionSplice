@@ -29,7 +29,7 @@ struct VideoConfigiration {
 extension VideoConfigiration {
     static var export: Self {
         Self(
-            videoSize: CGSize(width: 1080, height: 1920),
+            videoSize: CGSize(width: 1920, height: 1080),
             fps: 30,
             bitrate: .reels,
             quality: .fullHD,
@@ -40,7 +40,7 @@ extension VideoConfigiration {
 
     static var preview: Self {
         Self(
-            videoSize: CGSize(width: 720, height: 1280),
+            videoSize: CGSize(width: 1280, height: 720),
             fps: 30,
             bitrate: .reels,
             quality: .fullHD,

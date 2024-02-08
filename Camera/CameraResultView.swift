@@ -24,7 +24,7 @@ public struct CameraResultView: View {
             ZStack {
                 if let url {
                     if isVideo {
-                        PlayerView(url: url)
+//                        VideoPlayerView(url: url)
                     } else if let uiImage = UIImage(contentsOfFile: url.path) {
                         Image(uiImage: uiImage)
                             .resizable()

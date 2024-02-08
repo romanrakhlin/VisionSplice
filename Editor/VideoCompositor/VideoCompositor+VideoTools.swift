@@ -100,8 +100,8 @@ extension VideoCompositor {
 }
 
 // MARK: - Merge chunks
+
 extension VideoCompositor {
-    
     static func mergeVideosComposition(_ urls: [URL]) async throws -> AVMutableComposition {
         let composition = AVMutableComposition()
         let videoTrack = composition.addMutableTrack(
@@ -152,8 +152,8 @@ extension VideoCompositor {
 }
 
 // MARK: - Frames
-extension VideoCompositor {
 
+extension VideoCompositor {
     static func exportFirstFrame(from video: AVAsset) throws -> CVPixelBuffer {
         try exportFrame(from: video, at: .zero)
     }

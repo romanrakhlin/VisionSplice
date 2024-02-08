@@ -9,11 +9,12 @@ import SwiftUI
 
 struct FramesCarouselItemView: View {
     
-    var thumbnailGeneration: () async throws -> UIImage
+    var frame: FrameItem
+//    var thumbnailGeneration: (() async throws -> UIImage)?
     
     @State var thumbnail: Image?
     
-    private let frame = CGSize(
+    private let size = CGSize(
         width: UIDevice.current.userInterfaceIdiom == .pad ? 120 : 60,
         height: UIDevice.current.userInterfaceIdiom == .pad ? 160 : 80
     )
@@ -22,14 +23,20 @@ struct FramesCarouselItemView: View {
         ZStack {
             Rectangle()
                 .fill(Constants.secondaryColor)
-                .frame(width: frame.width, height: frame.height)
+                .frame(width: size.width, height: size.height)
             
             if let thumbnail {
                 thumbnail
                     .resizable()
                     .scaledToFill()
-                    .frame(width: frame.width, height: frame.height)
+                    .frame(width: size.width, height: size.height)
                     .clipped()
+            }
+            
+            if frame is FrameEmptyItem {
+                Image(systemName: "plus")
+                    .font(.system(size: 36, weight: .bold, design: .rounded))
+                    .foregroundColor(Constants.primaryColor)
             }
             
 //                        Text("kfjgnj")
@@ -40,7 +47,7 @@ struct FramesCarouselItemView: View {
         .shadow(radius: 4)
         .onAppear {
             Task {
-                let generatedThumbnail = try await thumbnailGeneration()
+                let generatedThumbnail = try await frame.generateThumbnail()
                 
                 Task { @MainActor in
                     thumbnail = Image(uiImage: generatedThumbnail)

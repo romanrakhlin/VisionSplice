@@ -23,11 +23,6 @@ final class VideoModel: ObservableObject {
 
     @Published private(set) var isRegeneratingComposition: CurrentValueSubject<Bool, Never> = .init(false)
     @Published private(set) var items: [any FrameItem] = []
-    @Published private(set) var dummyItems: [any FrameItem] = [
-        FrameImageItem(image: UIImage(named: "Pumpkin")!),
-        FrameImageItem(image: UIImage(named: "Pumpkin")!),
-        FrameImageItem(image: UIImage(named: "Pumpkin")!)
-    ]
 
     var emptyItemsCount: Int { items.filter { $0 is FrameEmptyItem }.count }
 
@@ -35,7 +30,7 @@ final class VideoModel: ObservableObject {
 
     var isReady: Bool { isRegeneratingComposition.value == false }
     
-    var duration: CMTime { CMTime(seconds: items.reduce(TimeInterval.zero, { $0 + $1.duration.seconds })) }
+    var duration: CMTime { items.reduce(CMTime.zero, { CMTimeAdd($0, $1.duration) }) }
 
     private var composition = AVMutableComposition()
 
@@ -61,37 +56,35 @@ final class VideoModel: ObservableObject {
 
 extension VideoModel {
     // Insert
-    func insertEmptyItem(at index: Int) async throws {
+    func appendEmptyItem() async throws {
         let emptyItem = FrameEmptyItem()
-        try await insertItem(emptyItem, at: index)
+        try await appendItem(emptyItem)
     }
 
-    func insert(image: UIImage, at index: Int) async throws {
+    func append(image: UIImage) async throws {
         let item = FrameImageItem(image: image)
-        try await insertItem(item, at: index)
+        try await appendItem(item)
     }
 
-    func insert(asset: AVAsset, at index: Int) async throws {
-        let timeRange = CMTimeRange(start: .zero, duration: asset.duration)
+    func append(asset: AVAsset) async throws {
         let videoItem = FrameVideoItem(asset: asset)
-        try await insertItem(videoItem, at: index)
+        try await appendItem(videoItem)
     }
 
-    private func insertItem(_ item: any FrameItem, at index: Int) async throws {
-        guard index >= 0 && index <= items.count else {
-            throw Error.indexOutOfRange
+    private func appendItem(_ item: any FrameItem) async throws {
+        Task { @MainActor in
+            items.append(item)
         }
 
-        items.insert(item, at: index)
-
         isRegeneratingComposition.value = true
-        try await resolveItem(item, at: index)
+        try await resolveItem(item)
         isRegeneratingComposition.value = false
     }
 
-    private func resolveItem(_ item: any FrameItem, at index: Int) async throws {
+    private func resolveItem(_ item: any FrameItem) async throws {
+        guard !(item is FrameEmptyItem) else { return }
         let videoAsset = try await item.generateAsset(config: reelConfig)
-        return try insertVideo(videoAsset, at: index)
+        return try appendVideo(videoAsset)
     }
 
     // Move
@@ -222,12 +215,12 @@ extension VideoModel {
 }
 
 extension VideoModel {
-    func insert(from source: FrameItemSource, at index: Int) async throws {
+    func append(from source: FrameItemSource) async throws {
         switch source {
         case let image as UIImage:
-            try await insert(image: image, at: index)
+            try await append(image: image)
         case let asset as AVAsset:
-            try await insert(asset: asset, at: index)
+            try await append(asset: asset)
         default:
             fatalError("unknown reel item source: \(source)")
         }
@@ -241,63 +234,54 @@ extension VideoModel {
         try composition.addTracks(
             .audio,
             from: asset,
-            trim: CMTimeRange(
-                start: .zero,
-                duration: duration
-            )
+            trim: CMTimeRange(start: .zero, duration: duration)
         )
     }
 
-    private func insertVideo(_ asset: AVAsset, at index: Int) throws {
+    private func appendVideo(_ asset: AVAsset) throws {
         let assetTracks = asset.tracks(withMediaType: .video)
-
+        let insertDuration = items.prefix(upTo: items.count - 1).reduce(CMTime.zero, { CMTimeAdd($0, $1.duration) })
+        
         for assetTrack in assetTracks {
             let trackTimeRange = assetTrack.timeRange
-            let startTime = startTimeForIndex(index)
             let mutableTrack = compositionDefaultTrack(for: assetTrack.mediaType)
             try mutableTrack?.insertTimeRange(
                 CMTimeRange(start: .zero, duration: trackTimeRange.duration),
                 of: assetTrack,
-                at: startTime
+                at: insertDuration
             )
         }
     }
 
     private func replaceVideo(at index: Int, with asset: AVAsset) throws {
         let assetTimeRange = CMTimeRange(start: .zero, duration: asset.duration)
-        let timeRange = CMTimeRange(
-            start: startTimeForIndex(index),
-            duration: assetTimeRange.duration
-        )
+        let timeRange = CMTimeRange(start: startTimeForIndex(index), duration: assetTimeRange.duration)
 
         guard let videoTrack = asset.tracks(withMediaType: .video).first else {
             throw Error.invalidVideoAsset(asset)
         }
+        
         guard let compositionTrack = compositionDefaultTrack(for: videoTrack.mediaType) else {
             throw Error.compositionVideoTrackFailed
         }
 
         compositionTrack.removeTimeRange(timeRange)
-        try insertVideo(asset, at: index)
+        try appendVideo(asset)
     }
 
     private func regenerateComposition() async throws {
         if let compositionVideoTrack = compositionDefaultTrack(for: .video) {
             compositionVideoTrack.removeTimeRange(
-                CMTimeRange(
-                    start: .zero,
-                    duration: compositionVideoTrack.timeRange.duration
-                )
+                CMTimeRange(start: .zero, duration: compositionVideoTrack.timeRange.duration)
             )
         }
 
-        for (idx, item) in items.enumerated() {
-            try await resolveItem(item, at: idx)
+        for item in self.items {
+            try await resolveItem(item)
         }
     }
 
     private func startTimeForIndex(_ index: Int) -> CMTime {
-        assert(index >= 0 && index <= items.count, "Index out of range")
         return items.prefix(upTo: index).reduce(CMTime.zero) { partialResult, reelItem in
             CMTimeAdd(partialResult, reelItem.duration)
         }

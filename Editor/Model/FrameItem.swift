@@ -13,7 +13,8 @@ enum FrameItemConfiguration {
     static let thumbnailSize = CGSize(width: 256, height: 512)
 }
 
-protocol FrameItem: AnyObject {
+protocol FrameItem: AnyObject, Identifiable {
+    var id: UUID { get }
     var duration: CMTime { get }
     func generateAsset(config: VideoConfigiration) async throws -> AVAsset
     func generateThumbnail() async throws -> UIImage

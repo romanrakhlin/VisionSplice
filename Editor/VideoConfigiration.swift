@@ -15,7 +15,7 @@ struct VideoConfigiration {
     let fps: Int32
 
     /// Bits  per second
-    let bitrate: Bitrate
+    let bitrate: Float
 
     /// Video quality preset
     let quality: VideoQuality
@@ -31,7 +31,7 @@ extension VideoConfigiration {
         Self(
             videoSize: CGSize(width: 1920, height: 1080),
             fps: 30,
-            bitrate: .reels,
+            bitrate: 4_000_000,
             quality: .fullHD,
             workingDirectoryURL: FileManager.reelsWorkingDirectoryURL,
             exportDirectoryURL: FileManager.documentsDirectoryURL
@@ -42,7 +42,7 @@ extension VideoConfigiration {
         Self(
             videoSize: CGSize(width: 1280, height: 720),
             fps: 30,
-            bitrate: .reels,
+            bitrate: 4_000_000,
             quality: .fullHD,
             workingDirectoryURL: FileManager.reelsWorkingDirectoryURL,
             exportDirectoryURL: FileManager.reelsWorkingDirectoryURL

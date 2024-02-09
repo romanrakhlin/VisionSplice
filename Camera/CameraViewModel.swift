@@ -22,6 +22,9 @@ class CameraViewModel: NSObject, ObservableObject {
     @Published var recordedDuration: Double = 0
     @Published var isRecording = false
     
+    @Published var selectedAsset: AVAsset?
+    @Published var selectedImage: UIImage?
+    
     @Published var showAlert = false
     @Published var alertIncludeSettings = false
     @Published var alertText = ""
@@ -210,6 +213,8 @@ class CameraViewModel: NSObject, ObservableObject {
         mediaData = Data(count: 0)
         recordedDuration = 0
         isRecording = false
+        selectedAsset = nil
+        selectedImage = nil
     }
 }
 

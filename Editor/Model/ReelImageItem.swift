@@ -10,6 +10,8 @@ import UIKit
 
 class FrameImageItem: FrameItem {
     
+    let id = UUID()
+    
     private enum Error: Swift.Error {
         case failedToCreatePixelBuffer
     }

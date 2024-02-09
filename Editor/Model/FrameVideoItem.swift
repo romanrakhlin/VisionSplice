@@ -10,6 +10,8 @@ import UIKit
 
 final class FrameVideoItem: FrameItem {
     
+    let id = UUID()
+    
     enum Error: Swift.Error {
         case assetGenerationFailed
         case assetGenerationInProgress
@@ -75,18 +77,13 @@ final class FrameVideoItem: FrameItem {
     }
 
     func generateThumbnail() async throws -> UIImage {
-        if let thumbnail {
-            return thumbnail
-        }
+        if let thumbnail { return thumbnail }
 
         let thumbnail: UIImage
         if let generatedAsset {
             thumbnail = try await VideoEditor.generateThumbnail(from: generatedAsset)
         } else {
-            thumbnail = try await VideoEditor.generateThumbnail(
-                from: sourceAsset,
-                at: .zero
-            )
+            thumbnail = try await VideoEditor.generateThumbnail(from: sourceAsset, at: .zero)
         }
         self.thumbnail = thumbnail
 

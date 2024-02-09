@@ -1,15 +1,15 @@
 import SwiftUI
 import AVKit
-import PhotosUI
 
 public struct CameraResultView: View {
     
     @StateObject private var playerViewModel = VideoPlayerViewModel()
     
-    @Binding var url: URL?
+    @ObservedObject var cameraViewModel: CameraViewModel
     
-    @State private var image: UIImage?
     @State private var playerView: VideoPlayerView?
+    
+    private var url: URL? { cameraViewModel.previewURL }
     
     private var isVideo: Bool {
         guard let url else { return false }
@@ -19,19 +19,13 @@ public struct CameraResultView: View {
     public var body: some View {
         GeometryReader { proxy in
             ZStack {
-                if let url {
-                    if let image {
-                        Image(uiImage: image)
-                            .resizable()
-                            .scaledToFill()
-                    } else if let playerView {
-                        playerView
-                    } else {
-                        Text("a")
-                        ProgressView()
-                    }
+                if let image = cameraViewModel.selectedImage {
+                    Image(uiImage: image)
+                        .resizable()
+                        .scaledToFill()
+                } else if let playerView {
+                    playerView
                 } else {
-                    Text("b")
                     ProgressView()
                 }
             }
@@ -51,9 +45,10 @@ public struct CameraResultView: View {
         
         if isVideo {
             playerView = VideoPlayerView(model: playerViewModel)
+            cameraViewModel.selectedAsset = AVAsset(url: url)
             playerViewModel.playerItem = AVPlayerItem(url: url)
         } else {
-            image = UIImage(contentsOfFile: url.path)
+            cameraViewModel.selectedImage = UIImage(contentsOfFile: url.path)
         }
     }
 }

@@ -24,7 +24,7 @@ struct CameraView: View {
                     .environmentObject(viewModel)
                     .onTapGesture(count: 2) { flipCamera() }
             } else {
-                CameraResultView(url: $viewModel.previewURL)
+                CameraResultView(cameraViewModel: viewModel)
                     .edgesIgnoringSafeArea(.all)
             }
             

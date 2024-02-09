@@ -7,27 +7,25 @@
 
 import SwiftUI
 
-//struct FramesDropDelegate: DropDelegate {
-//
-//    let item: FrameItem
-//    @Binding var items: [FrameItem]
-//    @Binding var draggedItem: FrameItem?
-//
-//    func performDrop(info: DropInfo) -> Bool {
-//        return true
-//    }
-//
-//    func dropEntered(info: DropInfo) {
-//        guard let draggedItem = self.draggedItem else {
-//            return
-//        }
-//
-//        if draggedItem != item {
-//            let from = items.firstIndex(of: draggedItem)!
-//            let to = items.firstIndex(of: item)!
-//            withAnimation(.default) {
-//                self.items.move(fromOffsets: IndexSet(integer: from), toOffset: to > from ? to + 1 : to)
-//            }
-//        }
-//    }
-//}
+struct FramesDropDelegate: DropDelegate {
+
+    let index: (any FrameItem)
+    @ObservedObject var videoModel: VideoModel
+    @Binding var draggedFrameIndex: (any FrameItem)?
+
+    func performDrop(info: DropInfo) -> Bool {
+        return true
+    }
+
+    func dropEntered(info: DropInfo) {
+        guard let draggedFrameIndex else { return }
+
+        if
+            draggedFrameIndex.id != index.id,
+            let at = videoModel.items.firstIndex(where: { $0.id == draggedFrameIndex.id }),
+            let to = videoModel.items.firstIndex(where: { $0.id == index.id })
+        {
+            videoModel.moveItem(at: at, to: to)
+        }
+    }
+}

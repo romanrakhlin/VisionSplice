@@ -11,26 +11,32 @@ struct FramesCarouselView: View {
     
     @ObservedObject var videoModel: VideoModel
     
-    @Binding var selectedFrame: FrameItem?
-    @Binding var draggedItem: FrameItem?
+    @Binding var selectedFrame: (any FrameItem)?
+    @State var draggedFrame: (any FrameItem)?
     
+    @Binding var isCreatePresented: Bool
     @Binding var isActionsSheetPresented: Bool
     
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 18) {
-                ForEach(Array(videoModel.items.enumerated()), id: \.offset) { index, item in
+                ForEach(videoModel.items, id: \.id) { item in
                     FramesCarouselItemView(frame: item)
                         .onTapGesture {
                             selectedFrame = item
                             isActionsSheetPresented.toggle()
                         }
-//                    .onDrag({
-//                        draggedItem = frame
-//                        return NSItemProvider(item: nil, typeIdentifier: frame)
-//                    })
-//                    .onDrop(of: [.text], delegate: FramesDropDelegate(item: frame, items: $videoModel.items, draggedItem: $draggedItem))
+                    .onDrag({
+                        draggedFrame = item
+                        let nsItem = NSItemProvider(object: NSString(string: item.id.uuidString))
+                        nsItem.suggestedName = item.id.uuidString
+                        return nsItem
+                    })
+                    .onDrop(of: [.text], delegate: FramesDropDelegate(index: item, videoModel: videoModel, draggedFrameIndex: $draggedFrame))
                 }
+                
+                FramesCarouselItemView(isEmptyItem: true)
+                    .onTapGesture { isCreatePresented.toggle() }
             }
             .padding(.horizontal, 20)
         }

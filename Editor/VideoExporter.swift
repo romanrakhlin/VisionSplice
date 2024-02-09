@@ -24,7 +24,7 @@ enum VideoExporter {
         config: VideoConfigiration = .export,
         filename: String = UUID().uuidString
     ) async throws -> URL {
-        let exportItems = reel.items.removingTrailingEmptyItems()
+        let exportItems = reel.items
 
         guard !exportItems.isEmpty else {
             throw ReelExporterError.emptyReelItems
@@ -72,16 +72,5 @@ enum VideoExporter {
             throw error
         }
         return outputVideoFileURL
-    }
-}
-
-private extension Array where Element == any FrameItem {
-    func removingTrailingEmptyItems() -> [Element] {
-        var items = self
-        while items.last is FrameEmptyItem {
-            _ = items.removeLast()
-        }
-
-        return items
     }
 }

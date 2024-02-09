@@ -15,7 +15,7 @@ extension VideoCompositor {
         duration: TimeInterval,
         renderSize: CGSize,
         fps: Int32,
-        bitrate: Bitrate,
+        bitrate: Float,
         storeDirectory: URL,
         fileName: String = UUID().uuidString
     ) async throws -> URL {
@@ -37,7 +37,7 @@ extension VideoCompositor {
         duration: TimeInterval,
         renderSize: CGSize,
         fps: Int32,
-        bitrate: Bitrate,
+        bitrate: Float,
         storeDirectory: URL,
         outputName: String
     ) async throws -> URL {

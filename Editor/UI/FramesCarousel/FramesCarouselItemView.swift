@@ -9,8 +9,8 @@ import SwiftUI
 
 struct FramesCarouselItemView: View {
     
-    var frame: FrameItem
-//    var thumbnailGeneration: (() async throws -> UIImage)?
+    var frame: (any FrameItem)?
+    var isEmptyItem = false
     
     @State var thumbnail: Image?
     
@@ -33,7 +33,7 @@ struct FramesCarouselItemView: View {
                     .clipped()
             }
             
-            if frame is FrameEmptyItem {
+            if isEmptyItem {
                 Image(systemName: "plus")
                     .font(.system(size: 36, weight: .bold, design: .rounded))
                     .foregroundColor(Constants.primaryColor)
@@ -45,13 +45,17 @@ struct FramesCarouselItemView: View {
         }
         .cornerRadius(10)
         .shadow(radius: 4)
-        .onAppear {
-            Task {
-                let generatedThumbnail = try await frame.generateThumbnail()
-                
-                Task { @MainActor in
-                    thumbnail = Image(uiImage: generatedThumbnail)
-                }
+        .onAppear { updateThumbnail() }
+    }
+    
+    private func updateThumbnail() {
+        Task {
+            guard let frame else { return }
+            
+            let generatedThumbnail = try await frame.generateThumbnail()
+            
+            Task { @MainActor in
+                thumbnail = Image(uiImage: generatedThumbnail)
             }
         }
     }

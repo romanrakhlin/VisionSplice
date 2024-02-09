@@ -12,11 +12,9 @@ struct VideoPlayerView: View {
     
     @ObservedObject var model: VideoPlayerViewModel
     
-    var addItemAction: (() -> Void)?
-    
-    @State var playingTime: String?
-    @State var overallDuration: String?
-    @State var videoProgress = 0.0
+    @State private var playingTime: String?
+    @State private var overallDuration: String?
+    @State private var videoProgress = 0.0
     
     private var asset: AVAsset? { model.asset }
     
@@ -24,14 +22,8 @@ struct VideoPlayerView: View {
         ZStack {
             AVPlayerLayerViewRepresentable(player: $model.player, videoGravity: $model.videoGravity)
                 .onTapGesture {
-                    guard model.assetState != .loading else {
-                        return
-                    }
-                    guard model.assetState != .empty else {
-                        addItemAction?()
-                        return
-                    }
-
+                    guard model.assetState == .ready, !model.isPauseDisabled else { return }
+                    
                     switch model.playbackState {
                     case .stopped, .paused:
                         play()
@@ -40,7 +32,7 @@ struct VideoPlayerView: View {
                     }
                 }
                 
-            if model.assetState == .ready {
+            if model.assetState == .ready && !model.isPauseDisabled {
                 if model.playbackState == .playing {
                     Button {
                         pause()

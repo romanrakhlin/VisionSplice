@@ -18,7 +18,6 @@ struct EditorView: View {
     @StateObject private var videoModel = VideoModel()
     @StateObject private var playerViewModel = VideoPlayerViewModel()
     
-    @State var frames: [String] = ["1", "2", "3", "4"]
     @State var selectedFrame: FrameItem?
     @State var draggedItem: FrameItem?
     
@@ -109,6 +108,20 @@ struct EditorView: View {
                 draggedItem: $draggedItem,
                 isActionsSheetPresented: $isActionsSheetPresented
             )
+//            .actionSheet(isPresented: $isActionsSheetPresented) {
+//                ActionSheet(title: Text("Change this frame?"), message: nil, buttons: [
+//                    .default(Text("Crop"), action: {
+//                        print("Crop frame")
+//                    }),
+//                    .default(Text("Replace"), action: {
+//                        print("Replace frame")
+//                    }),
+//                    .destructive(Text("Remove"), action: {
+//    //                        videoModel.items.removeAll { $0 == selectedFrame }
+//                    }),
+//                    .cancel()
+//                ])
+//            }
         }
         .background(Constants.backgroundColor)
         .onAppear {

@@ -4,7 +4,8 @@ import SwiftUI
 struct MyApp: App {
     var body: some Scene {
         WindowGroup {
-            EditorView(sourceItem: UIImage(named: "Pumpkin")!)
+            ProjectsView()
+//            EditorView(sourceItem: UIImage(named: "Pumpkin")!)
                 .preferredColorScheme(.light)
         }
     }

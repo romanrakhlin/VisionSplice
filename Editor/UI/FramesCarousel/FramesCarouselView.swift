@@ -33,20 +33,6 @@ struct FramesCarouselView: View {
                 }
             }
             .padding(.horizontal, 20)
-            .actionSheet(isPresented: $isActionsSheetPresented) {
-                ActionSheet(title: Text("Change this frame?"), message: nil, buttons: [
-                    .default(Text("Crop"), action: {
-                        print("Crop frame")
-                    }),
-                    .default(Text("Replace"), action: {
-                        print("Replace frame")
-                    }),
-                    .destructive(Text("Remove"), action: {
-//                        videoModel.items.removeAll { $0 == selectedFrame }
-                    }),
-                    .cancel()
-                ])
-            }
         }
         .padding(.top, 20)
         .padding(.bottom)

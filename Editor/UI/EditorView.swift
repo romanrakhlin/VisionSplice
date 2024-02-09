@@ -27,31 +27,37 @@ struct EditorView: View {
     
     var body: some View {
         VStack {
-            HStack(alignment: .center) {
-                Button {
-                    print("Close")
-                } label: {
-                    Image(systemName: "xmark")
-                        .resizable()
-                        .frame(width: 18, height: 18)
-                        .font(.system(size: 14, weight: .bold, design: .rounded))
-                        .foregroundColor(.white)
+            ZStack {
+                HStack(alignment: .center) {
+                    Button {
+                        print("Close")
+                    } label: {
+                        Image(systemName: "xmark")
+                            .resizable()
+                            .frame(width: 18, height: 18)
+                            .font(.system(size: 14, weight: .bold, design: .rounded))
+                            .foregroundColor(.white)
+                    }
+                    
+                    Spacer()
+                    
+                    Button {
+                        print("Close")
+                    } label: {
+                        Text("Create")
+                            .font(.system(size: 20, weight: .bold, design: .rounded))
+                            .foregroundColor(Constants.primaryColor)
+                    }
                 }
                 
-                Spacer()
-                
-                Text("Editor")
-                    .font(.system(size: 24, weight: .heavy, design: .rounded))
-                    .foregroundColor(.white)
-                
-                Spacer()
-                
-                Button {
-                    print("Close")
-                } label: {
-                    Text("Create")
-                        .font(.system(size: 20, weight: .bold, design: .rounded))
-                        .foregroundColor(Constants.primaryColor)
+                HStack(alignment: .center) {
+                    Spacer()
+                    
+                    Text("Editor")
+                        .font(.system(size: 24, weight: .heavy, design: .rounded))
+                        .foregroundColor(.white)
+                    
+                    Spacer()
                 }
             }
             .padding(.top, 10)

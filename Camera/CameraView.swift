@@ -3,14 +3,12 @@ import SwiftUI
 struct CameraView: View {
     
     @Environment(\.presentationMode) var presentationMode
-    @EnvironmentObject var viewModel: CameraViewModel
+    @ObservedObject var viewModel: CameraViewModel
     
     @State private var sessionIsRunning = false
     @State private var arebuttonsBlocked = false
     @State private var isGalleryPickerPresented = false
     @State private var selectedAssetURL: URL?
-    
-    let action: (URL, Data) -> Void
     
     private let maxVideoDuration: Int = 10
     
@@ -155,10 +153,7 @@ struct CameraView: View {
                         Spacer()
                         
                         Button {
-                            if let url = viewModel.previewURL {
-                                action(url, viewModel.mediaData)
-                                presentationMode.wrappedValue.dismiss()
-                            }
+                            presentationMode.wrappedValue.dismiss()
                         } label: {
                             Text("Use this content")
                                 .foregroundColor(.black)

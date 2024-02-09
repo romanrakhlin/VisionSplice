@@ -34,7 +34,8 @@ let package = Package(
             ],
             capabilities: [
                 .camera(purposeString: "Please allow camera access"),
-                .microphone(purposeString: "Please allow microphone access")
+                .microphone(purposeString: "Please allow microphone access"),
+                .photoLibrary(purposeString: "Please allow photo library access")
             ],
             appCategory: .utilities
         )

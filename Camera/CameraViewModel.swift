@@ -1,4 +1,3 @@
-import Foundation
 import SwiftUI
 import AVFoundation
 
@@ -13,6 +12,7 @@ class CameraViewModel: NSObject, ObservableObject {
     
     @Published var preview: AVCaptureVideoPreviewLayer!
     
+    @Published var isReady = false
     @Published var session = AVCaptureSession()
     @Published var isFinished: Bool = false
     @Published var isVideo: Bool = false
@@ -194,6 +194,22 @@ class CameraViewModel: NSObject, ObservableObject {
         videoOutput.stopRecording()
         isRecording = false
         isFinished = true
+    }
+    
+    public func manuallySetPreview(_ previewURL: URL?) {
+        self.previewURL = previewURL
+        isFinished = true
+    }
+    
+    public func reset() {
+        isReady = false
+        isFinished = false
+        isVideo = false
+        position = .front
+        previewURL = nil
+        mediaData = Data(count: 0)
+        recordedDuration = 0
+        isRecording = false
     }
 }
 

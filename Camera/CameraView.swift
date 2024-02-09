@@ -5,6 +5,11 @@ struct CameraView: View {
     @Environment(\.presentationMode) var presentationMode
     @EnvironmentObject var viewModel: CameraViewModel
     
+    @State private var sessionIsRunning = false
+    @State private var arebuttonsBlocked = false
+    @State private var isGalleryPickerPresented = false
+    @State private var selectedAssetURL: URL?
+    
     let action: (URL, Data) -> Void
     
     private let maxVideoDuration: Int = 10
@@ -14,11 +19,12 @@ struct CameraView: View {
             if !viewModel.isFinished {
                 ProgressView()
                     .progressViewStyle(.circular)
+                    .opacity(sessionIsRunning == true ? 0 : 1)
                 
-                CameraViewController()
+                CameraViewControllerRepresentable()
+                    .edgesIgnoringSafeArea(.all)
                     .environmentObject(viewModel)
                     .onTapGesture(count: 2) { flipCamera() }
-                    .edgesIgnoringSafeArea(.all)
             } else {
                 CameraResultView(url: $viewModel.previewURL)
                     .edgesIgnoringSafeArea(.all)
@@ -36,6 +42,7 @@ struct CameraView: View {
                                 .background(.white)
                                 .clipShape(Circle())
                         }
+                        .disabled(arebuttonsBlocked)
                         
                         Spacer()
                         
@@ -48,6 +55,7 @@ struct CameraView: View {
                                 .background(.white)
                                 .clipShape(Circle())
                         }
+                        .disabled(arebuttonsBlocked)
                     }
                     .padding(.top)
                     .opacity(viewModel.isRecording ? 0 : 1)
@@ -58,10 +66,13 @@ struct CameraView: View {
                         Button {
                             print("effect")
                         } label: {
-                            Rectangle()
-                                .frame(width: 50, height: 50)
+                            Image(systemName: "camera.filters")
+                                .font(.system(size: 36, weight: .regular, design: .rounded))
+                                .foregroundColor(.white)
+                                .shadow(radius: 4)
                         }
                         .padding(.bottom, 14)
+                        .disabled(arebuttonsBlocked)
                         
                         Spacer()
 
@@ -105,17 +116,22 @@ struct CameraView: View {
                                 })
                             )
                             .buttonStyle(.plain)
+                            .disabled(arebuttonsBlocked)
                         }
                         
                         Spacer()
                         
                         Button {
-                            print("Gallery")
+                            arebuttonsBlocked = true
+                            isGalleryPickerPresented.toggle()
                         } label: {
-                            Rectangle()
-                                .frame(width: 50, height: 50)
+                            Image(systemName: "photo.on.rectangle.angled")
+                                .font(.system(size: 36, weight: .regular, design: .rounded))
+                                .foregroundColor(.white)
+                                .shadow(radius: 4)
                         }
                         .padding(.bottom, 14)
+                        .disabled(arebuttonsBlocked)
                     }
                     .padding(.bottom)
                 } else {
@@ -157,8 +173,23 @@ struct CameraView: View {
                 }
             }
             .padding(.horizontal)
+            .opacity(sessionIsRunning == true ? 1 : 0)
+            
+            if arebuttonsBlocked {
+                HStack {
+                    Spacer()
+                    VStack {
+                        Spacer()
+                        ProgressView()
+                        Spacer()
+                    }
+                    Spacer()
+                }
+                .background(.black.opacity(0.4))
+            }
         }
         .onAppear {
+            viewModel.reset()
             viewModel.controllSession(start: true)
         }
         .onDisappear {
@@ -182,6 +213,8 @@ struct CameraView: View {
             }
         }
         .onReceive(Timer.publish(every: 0.01, on: .main, in: .common).autoconnect()) { _ in
+            sessionIsRunning = viewModel.session.isRunning
+            
             if viewModel.recordedDuration <= Double(maxVideoDuration) && viewModel.isRecording {
                 viewModel.recordedDuration += 0.01
             }
@@ -189,6 +222,14 @@ struct CameraView: View {
             if viewModel.recordedDuration >= Double(maxVideoDuration) && viewModel.isRecording {
                 viewModel.stopRecording()
             }
+        }
+        .sheet(isPresented: $isGalleryPickerPresented) {
+            GalleryPickerView(selectedAssetURL: $selectedAssetURL)
+                .edgesIgnoringSafeArea(.all)
+                .onDisappear { arebuttonsBlocked = false }
+        }
+        .onChange(of: selectedAssetURL) { newValue in
+            viewModel.manuallySetPreview(newValue)
         }
     }
     

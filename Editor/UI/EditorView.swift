@@ -69,6 +69,7 @@ struct EditorView: View {
                             VStack {
                                 Spacer()
                                 ProgressView()
+                                    .progressViewStyle(.circular)
                                 Spacer()
                             }
                             Spacer()
@@ -103,7 +104,8 @@ struct EditorView: View {
             }
             
             FramesCarouselView(
-                videoModel: videoModel, 
+                cameraViewModel: cameraViewModel,
+                videoModel: videoModel,
                 selectedFrame: $selectedFrame,
                 isCreatePresented: $isCreatePresented,
                 isActionsSheetPresented: $isActionsSheetPresented

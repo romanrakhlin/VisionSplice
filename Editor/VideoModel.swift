@@ -19,11 +19,11 @@ final class VideoModel: ObservableObject {
 
     let reelConfig: VideoConfigiration = .preview
     
-    @Published private(set) var isRegeneratingComposition: CurrentValueSubject<Bool, Never> = .init(false)
+    @Published private(set) var isRegeneratingComposition = false
     @Published private(set) var items: [any FrameItem] = []
 
     var createPlayerItem: AVPlayerItem { AVPlayerItem(asset: composition) }
-    var isReady: Bool { isRegeneratingComposition.value == false }
+    var isReady: Bool { isRegeneratingComposition == false }
     var duration: CMTime { items.reduce(CMTime.zero, { CMTimeAdd($0, $1.duration) }) }
 
     private var composition = AVMutableComposition()
@@ -73,11 +73,14 @@ extension VideoModel {
     private func appendItem(_ item: any FrameItem) async throws {
         Task { @MainActor in
             items.append(item)
+            isRegeneratingComposition = true
         }
-
-        isRegeneratingComposition.value = true
+        
         try await resolveItem(item, at: items.count)
-        isRegeneratingComposition.value = false
+        
+        Task { @MainActor in
+            isRegeneratingComposition = false
+        }
     }
 }
 
@@ -86,7 +89,7 @@ extension VideoModel {
 extension VideoModel {
     private func resolveItem(_ item: any FrameItem, at index: Int) async throws {
         let videoAsset = try await item.generateAsset(config: reelConfig)
-        return try insertVideo(videoAsset, at: index)
+        return try await insertVideo(videoAsset, at: index)
     }
 }
 
@@ -100,7 +103,7 @@ extension VideoModel {
         case let asset as AVAsset:
             try await replaceItem(at: index, with: asset)
         default:
-            fatalError("Unhandled ReelItemSource: \(source)")
+            fatalError("Unhandled FrametemSource: \(source)")
         }
     }
 
@@ -122,18 +125,18 @@ extension VideoModel {
 
         assert(item.duration == currentItem.duration)
 
-        isRegeneratingComposition.value = true
+        isRegeneratingComposition = true
         let videoAsset = try await item.generateAsset(config: reelConfig)
-
-        try replaceVideo(at: index, with: videoAsset)
-        isRegeneratingComposition.value = false
+        try await replaceVideo(at: index, with: videoAsset)
+        isRegeneratingComposition = false
     }
     
-    private func replaceVideo(at index: Int, with asset: AVAsset) throws {
-        let assetTimeRange = CMTimeRange(start: .zero, duration: asset.duration)
+    private func replaceVideo(at index: Int, with asset: AVAsset) async throws {
+        let assetDuration = try await asset.load(.duration)
+        let assetTimeRange = CMTimeRange(start: .zero, duration: assetDuration)
         let timeRange = CMTimeRange(start: startTimeForIndex(index), duration: assetTimeRange.duration)
 
-        guard let videoTrack = asset.tracks(withMediaType: .video).first else {
+        guard let videoTrack = try await asset.loadTracks(withMediaType: .video).first else {
             throw Error.invalidVideoAsset(asset)
         }
         
@@ -142,7 +145,7 @@ extension VideoModel {
         }
 
         compositionTrack.removeTimeRange(timeRange)
-        try insertVideo(asset, at: index)
+        try await insertVideo(asset, at: index)
     }
 }
 
@@ -153,10 +156,13 @@ extension VideoModel {
         let item = items.remove(at: sourceIndex)
         items.insert(item, at: destinationIndex)
         
+        isRegeneratingComposition = true
         Task(priority: .userInitiated) {
-            isRegeneratingComposition.value = true
             try await regenerateComposition()
-            isRegeneratingComposition.value = false
+            
+            Task { @MainActor in
+                isRegeneratingComposition = false
+            }
         }
     }
     
@@ -176,10 +182,13 @@ extension VideoModel {
     func removeItem(at index: Int) {
         items.remove(at: index)
         
+        isRegeneratingComposition = true
         Task(priority: .userInitiated) {
-            isRegeneratingComposition.value = true
             try await regenerateComposition()
-            isRegeneratingComposition.value = false
+            
+            Task { @MainActor in
+                isRegeneratingComposition = false
+            }
         }
     }
     
@@ -218,11 +227,11 @@ extension VideoModel {
 // MARK: - Private
 
 extension VideoModel {
-    private func insertVideo(_ asset: AVAsset, at index: Int) throws {
-        let assetTracks = asset.tracks(withMediaType: .video)
+    private func insertVideo(_ asset: AVAsset, at index: Int) async throws {
+        let assetTracks = try await asset.loadTracks(withMediaType: .video)
 
         for assetTrack in assetTracks {
-            let trackTimeRange = assetTrack.timeRange
+            let trackTimeRange = try await assetTrack.load(.timeRange)
             let startTime = startTimeForIndex(index)
             let mutableTrack = compositionDefaultTrack(for: assetTrack.mediaType)
             try mutableTrack?.insertTimeRange(

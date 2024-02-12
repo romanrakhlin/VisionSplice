@@ -18,7 +18,7 @@ struct FramesDropDelegate: DropDelegate {
     }
 
     func dropEntered(info: DropInfo) {
-        guard let draggedFrameIndex else { return }
+        guard videoModel.isReady, let draggedFrameIndex else { return }
 
         if
             draggedFrameIndex.id != index.id,

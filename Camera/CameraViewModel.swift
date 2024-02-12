@@ -39,7 +39,7 @@ class CameraViewModel: NSObject, ObservableObject {
         position: .unspecified
     )
     
-    private let sessionQueue = DispatchQueue(label: "com.romanrakhlin.cameraSessionQueue")
+    private let sessionQueue = DispatchQueue(label: "cameraSessionQueue")
     
     override init() {
         super.init()

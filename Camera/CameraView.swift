@@ -54,6 +54,7 @@ struct CameraView: View {
                                 .clipShape(Circle())
                         }
                         .disabled(arebuttonsBlocked)
+                        .opacity(sessionIsRunning == true ? 1 : 0)
                     }
                     .padding(.top)
                     .opacity(viewModel.isRecording ? 0 : 1)
@@ -132,6 +133,7 @@ struct CameraView: View {
                         .disabled(arebuttonsBlocked)
                     }
                     .padding(.bottom)
+                    .opacity(sessionIsRunning == true ? 1 : 0)
                 } else {
                     HStack {
                         Button {
@@ -146,6 +148,7 @@ struct CameraView: View {
                         
                         Spacer()
                     }
+                    .opacity(sessionIsRunning == true ? 1 : 0)
                     
                     Spacer()
                     
@@ -165,10 +168,10 @@ struct CameraView: View {
                                 .clipShape(Capsule())
                         }
                     }
+                    .opacity(sessionIsRunning == true ? 1 : 0)
                 }
             }
             .padding(.horizontal)
-            .opacity(sessionIsRunning == true ? 1 : 0)
             
             if arebuttonsBlocked {
                 HStack {
@@ -176,6 +179,7 @@ struct CameraView: View {
                     VStack {
                         Spacer()
                         ProgressView()
+                            .progressViewStyle(.circular)
                         Spacer()
                     }
                     Spacer()

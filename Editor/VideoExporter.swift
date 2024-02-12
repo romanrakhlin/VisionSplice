@@ -19,11 +19,7 @@ enum VideoExporter {
     /// - Returns: URL of the exported video. It's saved it the temporary folder specified
     /// in `config`, so the best practice would be to copy it to store somewhere, and delete
     /// the temporary folder after you're done.
-    static func export(
-        reel: VideoModel,
-        config: VideoConfigiration = .export,
-        filename: String = UUID().uuidString
-    ) async throws -> URL {
+    static func export(reel: VideoModel, config: VideoConfigiration = .export, filename: String = UUID().uuidString) async throws -> URL {
         let exportItems = reel.items
 
         guard !exportItems.isEmpty else {
@@ -40,8 +36,9 @@ enum VideoExporter {
 
         for item in exportItems {
             let asset = try await item.generateAsset(config: config)
-            for assetVideoTrack in asset.tracks(withMediaType: .video) {
-                let timeRange = CMTimeRange(start: .zero, end: assetVideoTrack.timeRange.duration)
+            for assetVideoTrack in try await asset.loadTracks(withMediaType: .video) {
+                let videoTrackTimeRange = try await assetVideoTrack.load(.timeRange)
+                let timeRange = CMTimeRange(start: .zero, end: videoTrackTimeRange.duration)
                 try videoTrack.insertTimeRange(
                     timeRange,
                     of: assetVideoTrack,

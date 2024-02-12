@@ -27,6 +27,7 @@ public struct CameraResultView: View {
                     playerView
                 } else {
                     ProgressView()
+                        .progressViewStyle(.circular)
                 }
             }
             .frame(width: proxy.size.width, height: proxy.size.height)

@@ -9,11 +9,12 @@ import SwiftUI
 
 struct FramesCarouselView: View {
     
+    @ObservedObject var cameraViewModel: CameraViewModel
     @ObservedObject var videoModel: VideoModel
     
-    @Binding var selectedFrame: (any FrameItem)?
     @State var draggedFrame: (any FrameItem)?
     
+    @Binding var selectedFrame: (any FrameItem)?
     @Binding var isCreatePresented: Bool
     @Binding var isActionsSheetPresented: Bool
     

@@ -13,7 +13,7 @@ struct EditorView: View {
     
     var sourceItem: FrameItemSource
     
-    @StateObject private var videoModel = VideoModel()
+    @StateObject private var videoModel = VideoViewModel()
     @StateObject private var playerViewModel = VideoPlayerViewModel()
     
     @State var selectedFrame: (any FrameItem)?
@@ -128,20 +128,21 @@ struct EditorView: View {
         }
         .background(Constants.backgroundColor)
         .onAppear {
-            playerView = VideoPlayerView(model: playerViewModel)
+            playerView = VideoPlayerView(viewModel: playerViewModel)
             appendItem(with: sourceItem, setupPlayer: true)
         }
         .fullScreenCover(isPresented: $isCreatePresented) {
             CameraView(viewModel: cameraViewModel)
                 .environmentObject(cameraViewModel)
         }
-        .onChange(of: cameraViewModel.selectedAsset) { asset in
-            guard let asset else { return }
-            appendItem(with: asset)
-        }
-        .onChange(of: cameraViewModel.selectedImage) { image in
-            guard let image else { return }
-            appendItem(with: image)
+        .onChange(of: cameraViewModel.isFinished) { isFinished in
+            guard isFinished else { return }
+            
+            if let asset = cameraViewModel.selectedAsset {
+                appendItem(with: asset)
+            } else if let image = cameraViewModel.selectedImage {
+                appendItem(with: image)
+            }
         }
     }
     

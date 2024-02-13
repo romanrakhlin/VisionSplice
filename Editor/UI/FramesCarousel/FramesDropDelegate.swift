@@ -10,7 +10,7 @@ import SwiftUI
 struct FramesDropDelegate: DropDelegate {
 
     let index: (any FrameItem)
-    @ObservedObject var videoModel: VideoModel
+    @ObservedObject var videoModel: VideoViewModel
     @Binding var draggedFrameIndex: (any FrameItem)?
 
     func performDrop(info: DropInfo) -> Bool {

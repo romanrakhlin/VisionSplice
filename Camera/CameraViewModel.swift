@@ -14,8 +14,9 @@ class CameraViewModel: NSObject, ObservableObject {
     
     @Published var isReady = false
     @Published var session = AVCaptureSession()
-    @Published var isFinished: Bool = false
-    @Published var isVideo: Bool = false
+    @Published var isFinished = false
+    @Published var isShootTaken = false
+    @Published var isVideo = false
     @Published var position: AVCaptureDevice.Position = .front
     @Published var orientation: AVCaptureVideoOrientation = .portrait {
         willSet { rotate(newValue) }
@@ -172,7 +173,7 @@ class CameraViewModel: NSObject, ObservableObject {
             self.photoOutput.capturePhoto(with: AVCapturePhotoSettings(), delegate: self)
             DispatchQueue.main.async {
                 withAnimation {
-                    self.isFinished = true
+                    self.isShootTaken = true
                 }
             }
         }
@@ -180,11 +181,7 @@ class CameraViewModel: NSObject, ObservableObject {
     
     public func retakeShoot() {
         withAnimation {
-            isVideo = false
-            recordedDuration = 0
-            mediaData = Data(count: 0)
-            previewURL = nil
-            isFinished = false
+            reset()
         }
     }
     
@@ -199,17 +196,18 @@ class CameraViewModel: NSObject, ObservableObject {
     public func stopRecording() {
         videoOutput.stopRecording()
         isRecording = false
-        isFinished = true
+        isShootTaken = true
     }
     
     public func manuallySetPreview(_ previewURL: URL?) {
         self.previewURL = previewURL
-        isFinished = true
+        isShootTaken = true
     }
     
     public func reset() {
-        isReady = false
         isFinished = false
+        isReady = false
+        isShootTaken = false
         isVideo = false
         position = .front
         previewURL = nil
@@ -218,6 +216,7 @@ class CameraViewModel: NSObject, ObservableObject {
         isRecording = false
         selectedAsset = nil
         selectedImage = nil
+        recordedDuration = 0
     }
     
     public func rotate(_ orientation: AVCaptureVideoOrientation) {
@@ -299,7 +298,7 @@ extension CameraViewModel: AVCapturePhotoCaptureDelegate {
         guard let imageData = photo.fileDataRepresentation() else { return }
         self.mediaData = imageData
         DispatchQueue.main.async {
-            self.isFinished = true
+            self.isShootTaken = true
         }
         savePhoto()
     }
@@ -316,7 +315,7 @@ extension CameraViewModel: AVCaptureFileOutputRecordingDelegate {
         
         previewURL = outputFileURL
         DispatchQueue.main.async {
-            self.isFinished = true
+            self.isShootTaken = true
         }
         
         do {

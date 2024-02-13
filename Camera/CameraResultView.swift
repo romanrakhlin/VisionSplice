@@ -45,7 +45,7 @@ public struct CameraResultView: View {
         guard let url else { return }
         
         if isVideo {
-            playerView = VideoPlayerView(model: playerViewModel)
+            playerView = VideoPlayerView(viewModel: playerViewModel)
             cameraViewModel.selectedAsset = AVAsset(url: url)
             playerViewModel.playerItem = AVPlayerItem(url: url)
         } else {

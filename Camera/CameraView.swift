@@ -14,7 +14,7 @@ struct CameraView: View {
     
     public var body: some View {
         ZStack {
-            if !viewModel.isFinished {
+            if !viewModel.isShootTaken {
                 ProgressView()
                     .progressViewStyle(.circular)
                     .opacity(sessionIsRunning == true ? 0 : 1)
@@ -29,7 +29,7 @@ struct CameraView: View {
             }
             
             VStack {
-                if !viewModel.isFinished {
+                if !viewModel.isShootTaken {
                     HStack {
                         Button {
                             presentationMode.wrappedValue.dismiss()
@@ -156,6 +156,7 @@ struct CameraView: View {
                         Spacer()
                         
                         Button {
+                            viewModel.isFinished = true
                             presentationMode.wrappedValue.dismiss()
                         } label: {
                             Text("Use this content")
@@ -194,6 +195,7 @@ struct CameraView: View {
         }
         .onDisappear {
             viewModel.controllSession(start: false)
+            viewModel.reset()
         }
         .alert(isPresented: $viewModel.showAlert) {
             if viewModel.alertIncludeSettings {

@@ -10,21 +10,21 @@ import AVFoundation
 
 struct VideoPlayerView: View {
     
-    @ObservedObject var model: VideoPlayerViewModel
+    @ObservedObject var viewModel: VideoPlayerViewModel
     
     @State private var playingTime: String?
     @State private var overallDuration: String?
     @State private var videoProgress = 0.0
     
-    private var asset: AVAsset? { model.asset }
+    private var asset: AVAsset? { viewModel.asset }
     
     public var body: some View {
         ZStack {
-            AVPlayerLayerViewRepresentable(player: $model.player, videoGravity: $model.videoGravity)
+            AVPlayerLayerViewRepresentable(player: $viewModel.player, videoGravity: $viewModel.videoGravity)
                 .onTapGesture {
-                    guard model.assetState == .ready, !model.isPauseDisabled else { return }
+                    guard viewModel.assetState == .ready, !viewModel.isPauseDisabled else { return }
                     
-                    switch model.playbackState {
+                    switch viewModel.playbackState {
                     case .stopped, .paused:
                         play()
                     case .playing:
@@ -32,8 +32,8 @@ struct VideoPlayerView: View {
                     }
                 }
                 
-            if model.assetState == .ready && !model.isPauseDisabled {
-                if model.playbackState == .playing {
+            if viewModel.assetState == .ready && !viewModel.isPauseDisabled {
+                if viewModel.playbackState == .playing {
                     Button {
                         pause()
                     } label: {
@@ -52,7 +52,7 @@ struct VideoPlayerView: View {
                 }
             }
             
-//            switch $model.assetState {
+//            switch $viewModel.assetState {
 //            case .empty:
 //            case .loading:
 //            case .ready:
@@ -74,6 +74,7 @@ struct VideoPlayerView: View {
             }
         }
         .onAppear(perform: setup)
+        .onDisappear(perform: viewModel.invalidate)
     }
     
     private func setup() {
@@ -85,12 +86,12 @@ struct VideoPlayerView: View {
         }
         
         // Setup Player
-        model.player.isMuted = false
-        model.loop = true
-        model.play()
+        viewModel.player.isMuted = false
+        viewModel.loop = true
+        viewModel.play()
         
         // Time observer
-        model.timeObserverHandler = { time in
+        viewModel.timeObserverHandler = { time in
             updatePlaybackProgress(withTime: time)
         }
     }
@@ -100,30 +101,30 @@ struct VideoPlayerView: View {
 
 extension VideoPlayerView {
     public func setLoading() {
-        model.assetState = .loading
+        viewModel.assetState = .loading
     }
     
     private func play() {
-        model.playbackState = .playing
-        model.play()
+        viewModel.playbackState = .playing
+        viewModel.play()
     }
 
     private func pause() {
-        model.playbackState = .paused
-        model.pause()
+        viewModel.playbackState = .paused
+        viewModel.pause()
     }
     
     private func stop() {
-        model.playbackState = .paused
-        model.stop()
+        viewModel.playbackState = .paused
+        viewModel.stop()
     }
 
     private func seekToStart() {
-        model.seekToStart()
+        viewModel.seekToStart()
     }
 
     private func seekTo(time: CMTime) {
-        model.seekTo(time: time)
+        viewModel.seekTo(time: time)
         updatePlaybackProgress(withTime: time)
     }
 }

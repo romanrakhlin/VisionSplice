@@ -10,7 +10,7 @@ import SwiftUI
 struct FramesCarouselView: View {
     
     @ObservedObject var cameraViewModel: CameraViewModel
-    @ObservedObject var videoModel: VideoModel
+    @ObservedObject var videoModel: VideoViewModel
     
     @State var draggedFrame: (any FrameItem)?
     

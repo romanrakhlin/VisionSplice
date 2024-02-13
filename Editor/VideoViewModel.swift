@@ -1,5 +1,5 @@
 //
-//  VideoModel.swift
+//  VideoViewModel.swift
 //
 //
 //  Created by Roman Rakhlin on 2/6/24.
@@ -10,7 +10,7 @@ import Combine
 import CoreVideo
 import UIKit
 
-final class VideoModel: ObservableObject {
+final class VideoViewModel: ObservableObject {
     enum Error: Swift.Error {
         case indexOutOfRange
         case compositionVideoTrackFailed
@@ -48,7 +48,7 @@ final class VideoModel: ObservableObject {
 
 // MARK: - Append
 
-extension VideoModel {
+extension VideoViewModel {
     func append(from source: FrameItemSource) async throws {
         switch source {
         case let image as UIImage:
@@ -86,7 +86,7 @@ extension VideoModel {
 
 // MARK: - Resolve
 
-extension VideoModel {
+extension VideoViewModel {
     private func resolveItem(_ item: any FrameItem, at index: Int) async throws {
         let videoAsset = try await item.generateAsset(config: reelConfig)
         return try await insertVideo(videoAsset, at: index)
@@ -95,7 +95,7 @@ extension VideoModel {
 
 // MARK: - Replace
 
-extension VideoModel {
+extension VideoViewModel {
     func replaceItem(at index: Int, with source: FrameItemSource) async throws {
         switch source {
         case let image as UIImage:
@@ -151,7 +151,7 @@ extension VideoModel {
 
 // MARK: - Other
 
-extension VideoModel {
+extension VideoViewModel {
     func moveItem(at sourceIndex: Int, to destinationIndex: Int) {
         let item = items.remove(at: sourceIndex)
         items.insert(item, at: destinationIndex)
@@ -226,7 +226,7 @@ extension VideoModel {
 
 // MARK: - Private
 
-extension VideoModel {
+extension VideoViewModel {
     private func insertVideo(_ asset: AVAsset, at index: Int) async throws {
         let assetTracks = try await asset.loadTracks(withMediaType: .video)
 

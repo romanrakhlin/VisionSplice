@@ -187,6 +187,7 @@ struct CameraView: View {
                 .background(.black.opacity(0.4))
             }
         }
+        .background(.black)
         .onAppear {
             viewModel.reset()
             viewModel.controllSession(start: true)

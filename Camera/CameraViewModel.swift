@@ -10,13 +10,16 @@ class CameraViewModel: NSObject, ObservableObject {
         case faild
     }
     
-    @Published var preview: AVCaptureVideoPreviewLayer!
+    var preview: AVCaptureVideoPreviewLayer!
     
     @Published var isReady = false
     @Published var session = AVCaptureSession()
     @Published var isFinished: Bool = false
     @Published var isVideo: Bool = false
     @Published var position: AVCaptureDevice.Position = .front
+    @Published var orientation: AVCaptureVideoOrientation = .portrait {
+        willSet { rotate(newValue) }
+    }
     @Published var previewURL: URL?
     @Published var mediaData = Data(count: 0)
     @Published var recordedDuration: Double = 0
@@ -91,7 +94,7 @@ class CameraViewModel: NSObject, ObservableObject {
         }
         
         // Set session preset
-        session.sessionPreset = .hd1280x720
+        session.sessionPreset = .hd1280x720 // .hd1920x1080
         
         // Prepare devices
         guard
@@ -127,13 +130,10 @@ class CameraViewModel: NSObject, ObservableObject {
             session.addOutput(videoOutput)
             session.addOutput(photoOutput)
             
-            //            //set the format type for the video output.
-            //            videoOutput.videoSettings = [kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA]
-            
             // Setup video connection
             if let videoConnection = videoOutput.connection(with: .video) {
-                //                // Force video orientation
-                //                videoConnection.videoOrientation = .portrait
+                // Force video orientation
+                videoConnection.videoOrientation = orientation
                 
                 // Fixing mirroring issue
                 if videoConnection.isVideoMirroringSupported {
@@ -143,6 +143,9 @@ class CameraViewModel: NSObject, ObservableObject {
             
             // Setup photo connection
             if let photoConnection = photoOutput.connection(with: .video) {
+                // Force video orientation
+                photoConnection.videoOrientation = orientation
+                
                 // Fixing mirroring issue
                 if photoConnection.isVideoMirroringSupported {
                     photoConnection.isVideoMirrored = (position == .front)
@@ -215,6 +218,27 @@ class CameraViewModel: NSObject, ObservableObject {
         isRecording = false
         selectedAsset = nil
         selectedImage = nil
+    }
+    
+    public func rotate(_ orientation: AVCaptureVideoOrientation) {
+        guard let videoConnection = preview.connection else {
+            return
+        }
+        
+        switch orientation {
+        case .landscapeLeft:
+            videoConnection.videoOrientation = .landscapeLeft
+        case .landscapeRight:
+            videoConnection.videoOrientation = .landscapeRight
+        case .portrait:
+            videoConnection.videoOrientation = .portrait
+        case .portraitUpsideDown:
+            videoConnection.videoOrientation = .portraitUpsideDown
+        default:
+            videoConnection.videoOrientation = .portrait
+        }
+        
+        reconfigure()
     }
 }
 

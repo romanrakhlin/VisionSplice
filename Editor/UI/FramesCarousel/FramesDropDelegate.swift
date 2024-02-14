@@ -9,21 +9,21 @@ import SwiftUI
 
 struct FramesDropDelegate: DropDelegate {
 
-    let index: (any FrameItem)
+    let frame: (any FrameItem)
     @ObservedObject var videoModel: VideoViewModel
-    @Binding var draggedFrameIndex: (any FrameItem)?
+    @Binding var draggedFrame: (any FrameItem)?
 
     func performDrop(info: DropInfo) -> Bool {
         return true
     }
 
     func dropEntered(info: DropInfo) {
-        guard videoModel.isReady, let draggedFrameIndex else { return }
+        guard videoModel.isReady, let draggedFrame else { return }
 
         if
-            draggedFrameIndex.id != index.id,
-            let at = videoModel.items.firstIndex(where: { $0.id == draggedFrameIndex.id }),
-            let to = videoModel.items.firstIndex(where: { $0.id == index.id })
+            draggedFrame.id != frame.id,
+            let at = videoModel.indexForItem(draggedFrame),
+            let to = videoModel.indexForItem(frame)
         {
             videoModel.moveItem(at: at, to: to)
         }

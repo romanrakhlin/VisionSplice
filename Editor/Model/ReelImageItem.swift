@@ -17,7 +17,7 @@ class FrameImageItem: FrameItem {
     }
 
     let image: UIImage
-    let duration: CMTime = CMTime(seconds: 2.0)
+    let duration = CMTime(seconds: 2.0)
     var sourceImage: UIImage
 
     private(set) var thumbnail: UIImage?

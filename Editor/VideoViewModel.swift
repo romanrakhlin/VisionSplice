@@ -17,32 +17,19 @@ final class VideoViewModel: ObservableObject {
         case invalidVideoAsset(_ asset: AVAsset)
     }
 
-    let reelConfig: VideoConfigiration = .preview
+    let videoConfigiration: VideoConfigiration = .preview
     
     @Published private(set) var isRegeneratingComposition = false
     @Published private(set) var items: [any FrameItem] = []
+    
+    private var composition = AVMutableComposition()
 
     var createPlayerItem: AVPlayerItem { AVPlayerItem(asset: composition) }
     var isReady: Bool { isRegeneratingComposition == false }
     var duration: CMTime { items.reduce(CMTime.zero, { CMTimeAdd($0, $1.duration) }) }
 
-    private var composition = AVMutableComposition()
-
-    private func compositionDefaultTrack(for mediaType: AVMediaType) -> AVMutableCompositionTrack? {
-        if let compatibleTrack = composition.tracks(withMediaType: mediaType).first {
-            return compatibleTrack
-        } else if let mutableTrack = composition.addMutableTrack(
-            withMediaType: mediaType,
-            preferredTrackID: kCMPersistentTrackID_Invalid
-        ) {
-            return mutableTrack
-        } else {
-            return nil
-        }
-    }
-
     deinit {
-        reelConfig.cleanupWorkingDirectory()
+        videoConfigiration.cleanupWorkingDirectory()
     }
 }
 
@@ -88,7 +75,7 @@ extension VideoViewModel {
 
 extension VideoViewModel {
     private func resolveItem(_ item: any FrameItem, at index: Int) async throws {
-        let videoAsset = try await item.generateAsset(config: reelConfig)
+        let videoAsset = try await item.generateAsset(config: videoConfigiration)
         return try await insertVideo(videoAsset, at: index)
     }
 }
@@ -116,19 +103,21 @@ extension VideoViewModel {
         let newVideoItem = FrameVideoItem(asset: asset)
         try await replaceItem(at: index, with: newVideoItem)
     }
-
+    
     func replaceItem(at index: Int, with item: any FrameItem) async throws {
         guard items.indices.contains(index) else { throw Error.indexOutOfRange }
         
-        let currentItem = items[index]
-        items[index] = item
-
-        assert(item.duration == currentItem.duration)
-
-        isRegeneratingComposition = true
-        let videoAsset = try await item.generateAsset(config: reelConfig)
+        Task { @MainActor in
+            items[index] = item
+            isRegeneratingComposition = true
+        }
+        
+        let videoAsset = try await item.generateAsset(config: videoConfigiration)
         try await replaceVideo(at: index, with: videoAsset)
-        isRegeneratingComposition = false
+        
+        Task { @MainActor in
+            isRegeneratingComposition = false
+        }
     }
     
     private func replaceVideo(at index: Int, with asset: AVAsset) async throws {
@@ -152,7 +141,7 @@ extension VideoViewModel {
 // MARK: - Other
 
 extension VideoViewModel {
-    func moveItem(at sourceIndex: Int, to destinationIndex: Int) {
+    public func moveItem(at sourceIndex: Int, to destinationIndex: Int) {
         let item = items.remove(at: sourceIndex)
         items.insert(item, at: destinationIndex)
         
@@ -166,20 +155,7 @@ extension VideoViewModel {
         }
     }
     
-    func updateItem(at index: Int, with image: UIImage) async throws {
-        // TODO: Use crop rect instead of variable source image
-        let currentItem = items[index] as? FrameImageItem
-
-        let newImageItem = FrameImageItem(image: image)
-
-        if let currentItem {
-            newImageItem.sourceImage = currentItem.sourceImage
-        }
-
-        try await replaceItem(at: index, with: newImageItem)
-    }
-    
-    func removeItem(at index: Int) {
+    public func removeItem(at index: Int) {
         items.remove(at: index)
         
         isRegeneratingComposition = true
@@ -192,29 +168,7 @@ extension VideoViewModel {
         }
     }
     
-//    func trimVideoItem(at index: Int, trimRange: CMTimeRange) async throws {
-//        guard let currentItem = items[index] as? FrameVideoItem else {
-//            return
-//        }
-//
-//        let newTimeRange = CMTimeRange(start: trimRange.start, duration: currentItem.duration)
-//        let newVideoItem = FrameVideoItem(asset: currentItem.sourceAsset, timeRange: timeRange)
-//
-//        try await replaceItem(at: index, with: newVideoItem)
-//    }
-//
-//    func cropVideoItem(at index: Int, cropRect _: CGRect) async throws {
-//        guard let currentItem = items[index] as? FrameVideoItem else { return }
-//        // TODO: Implement video cropping
-//    }
-
-//    private func frameDuration(for idx: Int) -> CMTime {
-//        assert(template.frameDurations.indices.contains(idx))
-//        return CMTime(seconds: template.frameDurations[idx])
-//    }
-    
-    // Insert audio
-    func insertAudio(audioURL: URL) throws {
+    public func insertAudio(audioURL: URL) throws {
         let audioAsset = AVAsset(url: audioURL)
         try composition.addTracks(
             .audio,
@@ -224,12 +178,33 @@ extension VideoViewModel {
     }
 }
 
+// MARK: - Helpers
+
+extension VideoViewModel {
+    public func indexForItem(_ item: any FrameItem) -> Int? {
+        items.firstIndex(where: { $0.id == item.id })
+    }
+}
+
 // MARK: - Private
 
 extension VideoViewModel {
+    private func compositionDefaultTrack(for mediaType: AVMediaType) -> AVMutableCompositionTrack? {
+        if let compatibleTrack = composition.tracks(withMediaType: mediaType).first {
+            return compatibleTrack
+        } else if let mutableTrack = composition.addMutableTrack(
+            withMediaType: mediaType,
+            preferredTrackID: kCMPersistentTrackID_Invalid
+        ) {
+            return mutableTrack
+        } else {
+            return nil
+        }
+    }
+    
     private func insertVideo(_ asset: AVAsset, at index: Int) async throws {
         let assetTracks = try await asset.loadTracks(withMediaType: .video)
-
+        
         for assetTrack in assetTracks {
             let trackTimeRange = try await assetTrack.load(.timeRange)
             let startTime = startTimeForIndex(index)
@@ -241,7 +216,7 @@ extension VideoViewModel {
             )
         }
     }
-
+    
     private func regenerateComposition() async throws {
         if let compositionVideoTrack = compositionDefaultTrack(for: .video) {
             compositionVideoTrack.removeTimeRange(

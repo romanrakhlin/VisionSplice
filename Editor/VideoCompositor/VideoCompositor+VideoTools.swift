@@ -9,6 +9,7 @@ import AVFoundation
 import UIKit
 
 // MARK: - Generate from image
+
 extension VideoCompositor {
     static func makeStillVideo(
         fromImage image: UIImage,

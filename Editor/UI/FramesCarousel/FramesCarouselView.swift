@@ -33,11 +33,14 @@ struct FramesCarouselView: View {
                         nsItem.suggestedName = item.id.uuidString
                         return nsItem
                     })
-                    .onDrop(of: [.text], delegate: FramesDropDelegate(index: item, videoModel: videoModel, draggedFrameIndex: $draggedFrame))
+                    .onDrop(of: [.text], delegate: FramesDropDelegate(frame: item, videoModel: videoModel, draggedFrame: $draggedFrame))
                 }
                 
                 FramesCarouselItemView(isEmptyItem: true)
-                    .onTapGesture { isCreatePresented.toggle() }
+                    .onTapGesture { 
+                        selectedFrame = nil
+                        isCreatePresented.toggle()
+                    }
             }
             .padding(.horizontal, 20)
         }

@@ -13,7 +13,7 @@ struct EditorView: View {
     
     var sourceItem: FrameItemSource
     
-    @StateObject private var videoModel = VideoViewModel()
+    @StateObject private var videoViewModel = VideoViewModel()
     @StateObject private var playerViewModel = VideoPlayerViewModel()
     
     @State var selectedFrame: (any FrameItem)?
@@ -75,7 +75,11 @@ struct EditorView: View {
                             Spacer()
                         }
                     } else {
-                        playerView
+                        if !videoViewModel.items.isEmpty {
+                            playerView
+                        } else {
+                            Spacer()
+                        }
                     }
                 }
                 .background(Constants.secondaryColor)
@@ -105,22 +109,23 @@ struct EditorView: View {
             
             FramesCarouselView(
                 cameraViewModel: cameraViewModel,
-                videoModel: videoModel,
+                videoModel: videoViewModel,
                 selectedFrame: $selectedFrame,
                 isCreatePresented: $isCreatePresented,
                 isActionsSheetPresented: $isActionsSheetPresented
             )
             .actionSheet(isPresented: $isActionsSheetPresented) {
-                ActionSheet(title: Text("Change this frame?"), message: nil, buttons: [
-//                    .default(Text("Crop"), action: {
-//                        print("Crop frame")
-//                    }),
+                ActionSheet(title: Text("Manipulate frame"), message: nil, buttons: [
                     .default(Text("Replace"), action: {
-                        print("Replace frame")
+                        isCreatePresented = true
                     }),
                     .destructive(Text("Remove"), action: {
-//                        guard let selectedFrame else { return }
-//                        videoModel.removeItem(at: selectedFrame)
+                        guard 
+                            let selectedFrame,
+                            let indexToRemove = videoViewModel.indexForItem(selectedFrame)
+                        else { return }
+                        
+                        videoViewModel.removeItem(at: indexToRemove)
                     }),
                     .cancel()
                 ])
@@ -129,7 +134,7 @@ struct EditorView: View {
         .background(Constants.backgroundColor)
         .onAppear {
             playerView = VideoPlayerView(viewModel: playerViewModel)
-            appendItem(with: sourceItem, setupPlayer: true)
+            appendItem(with: sourceItem)
         }
         .fullScreenCover(isPresented: $isCreatePresented) {
             CameraView(viewModel: cameraViewModel)
@@ -138,18 +143,29 @@ struct EditorView: View {
         .onChange(of: cameraViewModel.isFinished) { isFinished in
             guard isFinished else { return }
             
-            if let asset = cameraViewModel.selectedAsset {
-                appendItem(with: asset)
-            } else if let image = cameraViewModel.selectedImage {
-                appendItem(with: image)
+            if 
+                let selectedFrame,
+                let selectedIndex = videoViewModel.indexForItem(selectedFrame)
+            { // In case of replace
+                if let asset = cameraViewModel.selectedAsset {
+                    replaceItem(with: asset, at: selectedIndex)
+                } else if let image = cameraViewModel.selectedImage {
+                    replaceItem(with: image, at: selectedIndex)
+                }
+            } else { // In case of append
+                if let asset = cameraViewModel.selectedAsset {
+                    appendItem(with: asset)
+                } else if let image = cameraViewModel.selectedImage {
+                    appendItem(with: image)
+                }
             }
         }
     }
     
-    private func appendItem(with sourceItem: FrameItemSource, setupPlayer: Bool = false) {
+    private func appendItem(with sourceItem: FrameItemSource) {
         Task(priority: .userInitiated) {
             do {
-                try await videoModel.append(from: sourceItem)
+                try await videoViewModel.append(from: sourceItem)
             } catch {
                 let nsError = error as NSError
                 let description = nsError.localizedRecoverySuggestion ?? nsError.localizedDescription
@@ -158,12 +174,29 @@ struct EditorView: View {
                 assertionFailure(error.localizedDescription)
             }
             
-            if setupPlayer {
+            if videoViewModel.items.count == 1 {
                 await MainActor.run {
-                    let previewPlayerItem = videoModel.createPlayerItem
-                    playerViewModel.playerItem = previewPlayerItem
+                    self.updatePlayer()
                 }
             }
         }
+    }
+    
+    private func replaceItem(with sourceItem: FrameItemSource, at index: Int) {
+        Task(priority: .userInitiated) {
+            do {
+                try await videoViewModel.replaceItem(at: index, with: sourceItem)
+            } catch {
+                let nsError = error as NSError
+                let description = nsError.localizedRecoverySuggestion ?? nsError.localizedDescription
+
+                // TODO: - show fail alert here
+                assertionFailure(error.localizedDescription)
+            }
+        }
+    }
+    
+    private func updatePlayer() {
+        playerViewModel.playerItem = videoViewModel.createPlayerItem
     }
 }

@@ -8,13 +8,3 @@
 import AVFoundation
 
 enum VideoCompositor {}
-
-extension VideoCompositor {
-    enum Error: Swift.Error {
-        case numberOfFramesDoesNotMatchNumberOfImages
-        case noImagesSpecified
-        case noSuchAudioFile
-        case pixelBufferCreationFailed
-        case noVideoTracksFound
-    }
-}

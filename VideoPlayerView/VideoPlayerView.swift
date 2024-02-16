@@ -33,23 +33,27 @@ struct VideoPlayerView: View {
                 }
                 
             if viewModel.assetState == .ready && !viewModel.isPauseDisabled {
-                if viewModel.playbackState == .playing {
-                    Button {
-                        pause()
-                    } label: {
-                        Image(systemName: "pause.fill")
-                            .font(.system(size: 36, weight: .bold, design: .rounded))
-                            .foregroundColor(Constants.primaryColor)
+                Rectangle()
+                    .fill(.clear)
+                    .background {
+                        if viewModel.playbackState == .playing {
+                            Button {
+                                pause()
+                            } label: {
+                                Image(systemName: "pause.fill")
+                                    .font(.system(size: 36, weight: .bold, design: .rounded))
+                                    .foregroundColor(Constants.primaryColor)
+                            }
+                        } else {
+                            Button {
+                                play()
+                            } label: {
+                                Image(systemName: "play.fill")
+                                    .font(.system(size: 36, weight: .bold, design: .rounded))
+                                    .foregroundColor(Constants.primaryColor)
+                            }
+                        }
                     }
-                } else {
-                    Button {
-                        play()
-                    } label: {
-                        Image(systemName: "play.fill")
-                            .font(.system(size: 36, weight: .bold, design: .rounded))
-                            .foregroundColor(Constants.primaryColor)
-                    }
-                }
             }
             
 //            switch $viewModel.assetState {
@@ -65,12 +69,14 @@ struct VideoPlayerView: View {
 //                actionButton.setImage(Images.Playback.pause, for: .normal)
 //            }
             
-            VStack {
-                Spacer()
-                
-                ProgressView(value: videoProgress, total: 1)
-                    .accentColor(Constants.primaryColor)
-                    .scaleEffect(x: 1, y: 4, anchor: .center)
+            if viewModel.showProgress {
+                VStack {
+                    Spacer()
+                    
+                    ProgressView(value: videoProgress, total: 1)
+                        .accentColor(Constants.primaryColor)
+                        .scaleEffect(x: 1, y: 4, anchor: .center)
+                }
             }
         }
         .onAppear(perform: setup)

@@ -11,11 +11,6 @@ public struct CameraResultView: View {
     
     private var url: URL? { cameraViewModel.previewURL }
     
-    private var isVideo: Bool {
-        guard let url else { return false }
-        return url.absoluteString.hasSuffix(".mov") || url.absoluteString.hasSuffix(".MOV")
-    }
-    
     public var body: some View {
         GeometryReader { proxy in
             ZStack {
@@ -44,7 +39,7 @@ public struct CameraResultView: View {
     private func configure() {
         guard let url else { return }
         
-        if isVideo {
+        if url.isVideo {
             playerView = VideoPlayerView(viewModel: playerViewModel)
             cameraViewModel.selectedAsset = AVAsset(url: url)
             playerViewModel.playerItem = AVPlayerItem(url: url)

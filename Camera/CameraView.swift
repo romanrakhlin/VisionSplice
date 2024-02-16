@@ -72,6 +72,7 @@ struct CameraView: View {
                         }
                         .padding(.bottom, 14)
                         .disabled(arebuttonsBlocked)
+                        .opacity(0)
                         
                         Spacer()
 

@@ -30,7 +30,8 @@ final class VideoPlayerViewModel: NSObject, ObservableObject {
     @Published var loop = true
     @Published var playbackState: PlaybackState = .playing
     @Published var assetState: AssetState = .empty
-    @Published var isPauseDisabled: Bool = false
+    @Published var isPauseDisabled = false
+    @Published var showProgress = true
     
     var asset: AVAsset? { playerItem?.asset }
     

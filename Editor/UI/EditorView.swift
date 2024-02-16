@@ -9,17 +9,21 @@ import SwiftUI
 
 struct EditorView: View {
     
+    @Environment(\.presentationMode) var presentationMode
+    
     @EnvironmentObject var cameraViewModel: CameraViewModel
     
     var sourceItem: FrameItemSource
     
     @StateObject private var videoViewModel = VideoViewModel()
     @StateObject private var playerViewModel = VideoPlayerViewModel()
+    @ObservedObject var shareViewModel: ShareViewModel
     
     @State var selectedFrame: (any FrameItem)?
     
     @State var isCreatePresented = false
     @State var isActionsSheetPresented = false
+    @Binding var isSharePresented: Bool
     
     @State private var playerView: VideoPlayerView?
     
@@ -28,7 +32,7 @@ struct EditorView: View {
             ZStack {
                 HStack(alignment: .center) {
                     Button {
-                        print("Close")
+                        presentationMode.wrappedValue.dismiss()
                     } label: {
                         Image(systemName: "xmark")
                             .resizable()
@@ -40,7 +44,15 @@ struct EditorView: View {
                     Spacer()
                     
                     Button {
-                        print("Close")
+                        playerViewModel.pause()
+                        
+                        Task(priority: .userInitiated) {
+                            let playerItem = try await videoViewModel.export()
+                            shareViewModel.playerItem = playerItem
+                        }
+                        
+                        presentationMode.wrappedValue.dismiss()
+                        isSharePresented = true
                     } label: {
                         Text("Create")
                             .font(.system(size: 20, weight: .bold, design: .rounded))
@@ -138,7 +150,6 @@ struct EditorView: View {
         }
         .fullScreenCover(isPresented: $isCreatePresented) {
             CameraView(viewModel: cameraViewModel)
-                .environmentObject(cameraViewModel)
         }
         .onChange(of: cameraViewModel.isFinished) { isFinished in
             guard isFinished else { return }

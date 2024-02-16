@@ -17,7 +17,8 @@ final class VideoViewModel: ObservableObject {
         case invalidVideoAsset(_ asset: AVAsset)
     }
 
-    let videoConfigiration: VideoConfigiration = .preview
+    let previewConfigiration: VideoConfigiration = .preview
+    let exportConfigiration: VideoConfigiration = .export
     
     @Published private(set) var isRegeneratingComposition = false
     @Published private(set) var items: [any FrameItem] = []
@@ -29,7 +30,7 @@ final class VideoViewModel: ObservableObject {
     var duration: CMTime { items.reduce(CMTime.zero, { CMTimeAdd($0, $1.duration) }) }
 
     deinit {
-        videoConfigiration.cleanupWorkingDirectory()
+        previewConfigiration.cleanupWorkingDirectory()
     }
 }
 
@@ -75,7 +76,7 @@ extension VideoViewModel {
 
 extension VideoViewModel {
     private func resolveItem(_ item: any FrameItem, at index: Int) async throws {
-        let videoAsset = try await item.generateAsset(config: videoConfigiration)
+        let videoAsset = try await item.generateAsset(config: previewConfigiration)
         return try await insertVideo(videoAsset, at: index)
     }
 }
@@ -112,7 +113,7 @@ extension VideoViewModel {
             isRegeneratingComposition = true
         }
         
-        let videoAsset = try await item.generateAsset(config: videoConfigiration)
+        let videoAsset = try await item.generateAsset(config: previewConfigiration)
         try await replaceVideo(at: index, with: videoAsset)
         
         Task { @MainActor in
@@ -186,6 +187,24 @@ extension VideoViewModel {
     }
 }
 
+// MARK: - Export
+
+extension VideoViewModel {
+    public func export() async throws -> AVPlayerItem {
+        let (exportSession, outputVideoFileURL) = VideoCompositor
+            .prepareDefaultExportSessionAndFileURL(
+                asset: composition,
+                quality: exportConfigiration.quality,
+                storeDirectory: exportConfigiration.exportDirectoryURL,
+                fileName: UUID().uuidString
+            )
+
+        await exportSession.export()
+        if let error = exportSession.error { throw error }
+        return AVPlayerItem(url: outputVideoFileURL)
+    }
+}
+
 // MARK: - Private
 
 extension VideoViewModel {
@@ -203,15 +222,29 @@ extension VideoViewModel {
     }
     
     private func insertVideo(_ asset: AVAsset, at index: Int) async throws {
-        let assetTracks = try await asset.loadTracks(withMediaType: .video)
+        let videoTracks = try await asset.loadTracks(withMediaType: .video)
+        let audioTracks = try await asset.loadTracks(withMediaType: .audio)
         
-        for assetTrack in assetTracks {
-            let trackTimeRange = try await assetTrack.load(.timeRange)
+        // add video tracks
+        for track in videoTracks {
+            let trackTimeRange = try await track.load(.timeRange)
             let startTime = startTimeForIndex(index)
-            let mutableTrack = compositionDefaultTrack(for: assetTrack.mediaType)
+            let mutableTrack = compositionDefaultTrack(for: track.mediaType)
             try mutableTrack?.insertTimeRange(
                 CMTimeRange(start: .zero, duration: trackTimeRange.duration),
-                of: assetTrack,
+                of: track,
+                at: startTime
+            )
+        }
+        
+        // add audio tracks
+        for track in audioTracks {
+            let trackTimeRange = try await track.load(.timeRange)
+            let startTime = startTimeForIndex(index)
+            let mutableTrack = compositionDefaultTrack(for: track.mediaType)
+            try mutableTrack?.insertTimeRange(
+                CMTimeRange(start: .zero, duration: trackTimeRange.duration),
+                of: track,
                 at: startTime
             )
         }

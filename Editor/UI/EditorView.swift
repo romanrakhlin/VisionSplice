@@ -171,6 +171,9 @@ struct EditorView: View {
                 }
             }
         }
+        .onChange(of: isCreatePresented) { isCreatePresented in
+            isCreatePresented ? playerViewModel.pause() : playerViewModel.play()
+        }
     }
     
     private func appendItem(with sourceItem: FrameItemSource) {

@@ -126,15 +126,16 @@ extension VideoViewModel {
         let assetTimeRange = CMTimeRange(start: .zero, duration: assetDuration)
         let timeRange = CMTimeRange(start: startTimeForIndex(index), duration: assetTimeRange.duration)
 
-        guard let videoTrack = try await asset.loadTracks(withMediaType: .video).first else {
-            throw Error.invalidVideoAsset(asset)
-        }
+        // Handle video track
+        guard let videoTrack = try await asset.loadTracks(withMediaType: .video).first else { throw Error.invalidVideoAsset(asset) }
+        guard let compositionVideoTrack = compositionDefaultTrack(for: videoTrack.mediaType) else { throw Error.compositionVideoTrackFailed }
+        compositionVideoTrack.removeTimeRange(timeRange)
         
-        guard let compositionTrack = compositionDefaultTrack(for: videoTrack.mediaType) else {
-            throw Error.compositionVideoTrackFailed
-        }
-
-        compositionTrack.removeTimeRange(timeRange)
+        // Handle audio track
+        guard let audioTrack = try await asset.loadTracks(withMediaType: .audio).first else { throw Error.invalidVideoAsset(asset) }
+        guard let compositionAudioTrack = compositionDefaultTrack(for: audioTrack.mediaType) else { throw Error.compositionVideoTrackFailed }
+        compositionAudioTrack.removeTimeRange(timeRange)
+        
         try await insertVideo(asset, at: index)
     }
 }
@@ -254,6 +255,12 @@ extension VideoViewModel {
         if let compositionVideoTrack = compositionDefaultTrack(for: .video) {
             compositionVideoTrack.removeTimeRange(
                 CMTimeRange(start: .zero, duration: compositionVideoTrack.timeRange.duration)
+            )
+        }
+        
+        if let compositionAudioTrack = compositionDefaultTrack(for: .audio) {
+            compositionAudioTrack.removeTimeRange(
+                CMTimeRange(start: .zero, duration: compositionAudioTrack.timeRange.duration)
             )
         }
 

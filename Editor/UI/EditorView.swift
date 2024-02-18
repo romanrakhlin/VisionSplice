@@ -11,6 +11,7 @@ struct EditorView: View {
     
     @Environment(\.presentationMode) var presentationMode
     
+    @EnvironmentObject var projectsViewModel: ProjectsViewModel
     @EnvironmentObject var cameraViewModel: CameraViewModel
     
     var sourceItem: FrameItemSource
@@ -47,8 +48,15 @@ struct EditorView: View {
                         playerViewModel.pause()
                         
                         Task(priority: .userInitiated) {
-                            let playerItem = try await videoViewModel.export()
+                            let (playerItem, videoURL, thumbnailURL) = try await videoViewModel.export()
                             shareViewModel.playerItem = playerItem
+                            
+                            let result = ResultModel(
+                                id: projectsViewModel.results.count,
+                                video: videoURL,
+                                thumbnail: thumbnailURL
+                            )
+                            projectsViewModel.create(result: result)
                         }
                         
                         presentationMode.wrappedValue.dismiss()

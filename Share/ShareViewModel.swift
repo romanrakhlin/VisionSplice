@@ -30,4 +30,12 @@ final class ShareViewModel: ObservableObject {
             return false
         }
     }
+    
+    public func setPlayerItemWith(url: URL) {
+        playerItem = AVPlayerItem(url: url)
+    }
+    
+    public func invalidatePlayerItem() {
+        playerItem = nil
+    }
 }

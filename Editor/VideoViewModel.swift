@@ -191,7 +191,8 @@ extension VideoViewModel {
 // MARK: - Export
 
 extension VideoViewModel {
-    public func export() async throws -> AVPlayerItem {
+    public func export() async throws -> (AVPlayerItem, URL, URL) {
+        // handle video
         let (exportSession, outputVideoFileURL) = VideoCompositor
             .prepareDefaultExportSessionAndFileURL(
                 asset: composition,
@@ -199,10 +200,19 @@ extension VideoViewModel {
                 storeDirectory: exportConfigiration.exportDirectoryURL,
                 fileName: UUID().uuidString
             )
-
+        
         await exportSession.export()
         if let error = exportSession.error { throw error }
-        return AVPlayerItem(url: outputVideoFileURL)
+        
+        // handle thunmbail
+        let thumbnail = try await items[0].generateThumbnail()
+        let thumbnailData = thumbnail.pngData()
+        let thumbnailURL = exportConfigiration.exportDirectoryURL
+            .appendingPathComponent(UUID().uuidString)
+            .appendingPathExtension("png")
+        try thumbnailData?.write(to: thumbnailURL)
+        
+        return (AVPlayerItem(url: outputVideoFileURL), outputVideoFileURL, thumbnailURL)
     }
 }
 

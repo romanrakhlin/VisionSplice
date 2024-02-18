@@ -60,6 +60,10 @@ struct ShareView: View {
         .onAppear {
             playerViewModel.isPauseDisabled = true
             playerView = VideoPlayerView(viewModel: playerViewModel)
+            
+            if let playerItem = viewModel.playerItem {
+                playerViewModel.playerItem = playerItem
+            }
         }
         .onChange(of: viewModel.playerItem) { playerItem in
             guard let playerItem else { return }

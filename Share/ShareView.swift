@@ -24,6 +24,7 @@ struct ShareView: View {
                     .edgesIgnoringSafeArea(.all)
             } else {
                 ProgressView()
+                    .progressViewStyle(.circular)
             }
             
             VStack {

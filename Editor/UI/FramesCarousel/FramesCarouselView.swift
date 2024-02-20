@@ -27,13 +27,13 @@ struct FramesCarouselView: View {
                             selectedFrame = item
                             isActionsSheetPresented.toggle()
                         }
-                    .onDrag({
-                        draggedFrame = item
-                        let nsItem = NSItemProvider(object: NSString(string: item.id.uuidString))
-                        nsItem.suggestedName = item.id.uuidString
-                        return nsItem
-                    })
-                    .onDrop(of: [.text], delegate: FramesDropDelegate(frame: item, videoModel: videoModel, draggedFrame: $draggedFrame))
+                        .onDrag({
+                            draggedFrame = item
+                            let nsItem = NSItemProvider(object: NSString(string: item.id.uuidString))
+                            nsItem.suggestedName = item.id.uuidString
+                            return nsItem
+                        })
+                        .onDrop(of: [.text], delegate: FramesDropDelegate(frame: item, videoModel: videoModel, draggedFrame: $draggedFrame))
                 }
                 
                 FramesCarouselItemView(isEmptyItem: true)

@@ -90,36 +90,3 @@ final class FrameVideoItem: FrameItem {
         return thumbnail
     }
 }
-
-extension AVAsset {
-    // TODO: - Fix video transform after adding empty time range
-    func addingEmptyRange(toInclude timeRange: CMTimeRange) throws -> AVAsset {
-        guard let assetVideoTrack = tracks(withMediaType: .video).first,
-              assetVideoTrack.timeRange.end < timeRange.end
-        else {
-            return self
-        }
-
-        let composition = AVMutableComposition()
-        let lastFrameDuration = CMTime(value: 1, timescale: 60)
-        let lastFrameRange = CMTimeRange(start: duration - lastFrameDuration, end: duration)
-        let videoTrack = composition.addMutableTrack(
-            withMediaType: .video,
-            preferredTrackID: kCMPersistentTrackID_Invalid
-        )!
-        try videoTrack.insertTimeRange(
-            CMTimeRange(start: .zero, duration: assetVideoTrack.timeRange.duration),
-            of: assetVideoTrack,
-            at: .zero
-        )
-        try videoTrack.insertTimeRange(
-            lastFrameRange,
-            of: assetVideoTrack,
-            at: timeRange.end
-        )
-        videoTrack.preferredTransform = assetVideoTrack.preferredTransform
-            .concatenating(videoTrack.preferredTransform)
-
-        return composition
-    }
-}

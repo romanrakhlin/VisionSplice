@@ -21,27 +21,37 @@ struct FramesCarouselItemView: View {
     
     var body: some View {
         ZStack {
-            Rectangle()
-                .fill(Constants.secondaryColor)
-                .frame(width: size.width, height: size.height)
-            
-            if let thumbnail {
-                thumbnail
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: size.width, height: size.height)
-                    .clipped()
-            }
-            
             if isEmptyItem {
+                Rectangle()
+                    .fill(Constants.secondaryColor)
+                    .frame(width: size.width, height: size.height)
+                
                 Image(systemName: "plus")
-                    .font(.system(size: 36, weight: .bold, design: .rounded))
+                    .font(.system(size: 32, weight: .medium, design: .rounded))
                     .foregroundColor(Constants.primaryColor)
+            } else {
+                if let thumbnail, let duration = frame?.duration.seconds {
+                    VStack {
+                        thumbnail
+                            .resizable()
+                            .scaledToFill()
+                            .frame(width: size.width, height: size.height)
+                            .clipped()
+                    }
+                    .overlay {
+                        Rectangle()
+                            .fill(.linearGradient(Gradient(colors: [.clear, .black.opacity(0.8)]), startPoint: .top, endPoint: .bottom))
+                        
+                        VStack {
+                            Spacer()
+                            
+                            Text(String(format:"%.1f", duration))
+                                .font(.system(size: 14, weight: .medium, design: .rounded))
+                                .foregroundColor(.white)
+                        }
+                    }
+                }
             }
-            
-//                        Text("kfjgnj")
-//                            .font(.system(size: 14, weight: .bold, design: .rounded))
-//                            .foregroundColor(.white)
         }
         .cornerRadius(10)
         .shadow(radius: 4)

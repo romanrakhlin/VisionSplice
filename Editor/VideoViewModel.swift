@@ -20,17 +20,42 @@ final class VideoViewModel: ObservableObject {
     let previewConfigiration: VideoConfigiration = .preview
     let exportConfigiration: VideoConfigiration = .export
     
-    @Published private(set) var isRegeneratingComposition = false
+    @Published private(set) var isRegeneratingComposition: CurrentValueSubject<Bool, Never> = .init(false)
     @Published private(set) var items: [any FrameItem] = []
     
+    var onStartingRegeneration: (() -> Void)?
+    var onEndingRegeneration: (() -> Void)?
+    
     private var composition = AVMutableComposition()
+    
+    private var storage = Set<AnyCancellable>()
 
     var createPlayerItem: AVPlayerItem { AVPlayerItem(asset: composition) }
-    var isReady: Bool { isRegeneratingComposition == false }
+    var isReady: Bool { isRegeneratingComposition.value == false }
     var duration: CMTime { items.reduce(CMTime.zero, { CMTimeAdd($0, $1.duration) }) }
+    
+    init() {
+        setupVideoModelObservation()
+    }
 
     deinit {
         previewConfigiration.cleanupWorkingDirectory()
+    }
+    
+    private func setupVideoModelObservation() {
+        isRegeneratingComposition
+            .throttle(for: 0.3, scheduler: DispatchQueue.main, latest: true)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] isRegenerating in
+                guard let self else { return }
+                
+                if isRegenerating {
+                    self.onStartingRegeneration?()
+                } else {
+                    self.onEndingRegeneration?()
+                }
+            }
+            .store(in: &storage)
     }
 }
 
@@ -61,13 +86,13 @@ extension VideoViewModel {
     private func appendItem(_ item: any FrameItem) async throws {
         Task { @MainActor in
             items.append(item)
-            isRegeneratingComposition = true
+            isRegeneratingComposition.value = true
         }
         
         try await resolveItem(item, at: items.count)
         
         Task { @MainActor in
-            isRegeneratingComposition = false
+            isRegeneratingComposition.value = false
         }
     }
 }
@@ -110,14 +135,14 @@ extension VideoViewModel {
         
         Task { @MainActor in
             items[index] = item
-            isRegeneratingComposition = true
+            isRegeneratingComposition.value = true
         }
         
         let videoAsset = try await item.generateAsset(config: previewConfigiration)
         try await replaceVideo(at: index, with: videoAsset)
         
         Task { @MainActor in
-            isRegeneratingComposition = false
+            isRegeneratingComposition.value = false
         }
     }
     
@@ -125,16 +150,16 @@ extension VideoViewModel {
         let assetDuration = try await asset.load(.duration)
         let assetTimeRange = CMTimeRange(start: .zero, duration: assetDuration)
         let timeRange = CMTimeRange(start: startTimeForIndex(index), duration: assetTimeRange.duration)
-
-        // Handle video track
-        guard let videoTrack = try await asset.loadTracks(withMediaType: .video).first else { throw Error.invalidVideoAsset(asset) }
-        guard let compositionVideoTrack = compositionDefaultTrack(for: videoTrack.mediaType) else { throw Error.compositionVideoTrackFailed }
-        compositionVideoTrack.removeTimeRange(timeRange)
         
-        // Handle audio track
-        guard let audioTrack = try await asset.loadTracks(withMediaType: .audio).first else { throw Error.invalidVideoAsset(asset) }
-        guard let compositionAudioTrack = compositionDefaultTrack(for: audioTrack.mediaType) else { throw Error.compositionVideoTrackFailed }
-        compositionAudioTrack.removeTimeRange(timeRange)
+        if let videoTrack = try await asset.loadTracks(withMediaType: .video).first {
+            let mutableVideoTrack = compositionDefaultTrack(for: videoTrack.mediaType)
+            mutableVideoTrack?.removeTimeRange(timeRange)
+            
+            if let audioTrack = try await asset.loadTracks(withMediaType: .audio).first {
+                let mutableAudioTrack = compositionDefaultTrack(for: audioTrack.mediaType)
+                mutableAudioTrack?.removeTimeRange(timeRange)
+            }
+        }
         
         try await insertVideo(asset, at: index)
     }
@@ -147,12 +172,12 @@ extension VideoViewModel {
         let item = items.remove(at: sourceIndex)
         items.insert(item, at: destinationIndex)
         
-        isRegeneratingComposition = true
+        isRegeneratingComposition.value = true
         Task(priority: .userInitiated) {
             try await regenerateComposition()
             
             Task { @MainActor in
-                isRegeneratingComposition = false
+                isRegeneratingComposition.value = false
             }
         }
     }
@@ -160,23 +185,14 @@ extension VideoViewModel {
     public func removeItem(at index: Int) {
         items.remove(at: index)
         
-        isRegeneratingComposition = true
+        isRegeneratingComposition.value = true
         Task(priority: .userInitiated) {
             try await regenerateComposition()
             
             Task { @MainActor in
-                isRegeneratingComposition = false
+                isRegeneratingComposition.value = false
             }
         }
-    }
-    
-    public func insertAudio(audioURL: URL) throws {
-        let audioAsset = AVAsset(url: audioURL)
-        try composition.addTracks(
-            .audio,
-            from: audioAsset,
-            trim: CMTimeRange(start: .zero, duration: duration)
-        )
     }
 }
 
@@ -233,31 +249,26 @@ extension VideoViewModel {
     }
     
     private func insertVideo(_ asset: AVAsset, at index: Int) async throws {
-        let videoTracks = try await asset.loadTracks(withMediaType: .video)
-        let audioTracks = try await asset.loadTracks(withMediaType: .audio)
-        
-        // add video tracks
-        for track in videoTracks {
-            let trackTimeRange = try await track.load(.timeRange)
+        if let videoTrack = try await asset.loadTracks(withMediaType: .video).first {
             let startTime = startTimeForIndex(index)
-            let mutableTrack = compositionDefaultTrack(for: track.mediaType)
-            try mutableTrack?.insertTimeRange(
-                CMTimeRange(start: .zero, duration: trackTimeRange.duration),
-                of: track,
+            
+            let videoTrackTimeRange = try await videoTrack.load(.timeRange)
+            let mutableVideoTrack = compositionDefaultTrack(for: videoTrack.mediaType)
+            try mutableVideoTrack?.insertTimeRange(
+                CMTimeRange(start: .zero, duration: videoTrackTimeRange.duration),
+                of: videoTrack,
                 at: startTime
             )
-        }
-        
-        // add audio tracks
-        for track in audioTracks {
-            let trackTimeRange = try await track.load(.timeRange)
-            let startTime = startTimeForIndex(index)
-            let mutableTrack = compositionDefaultTrack(for: track.mediaType)
-            try mutableTrack?.insertTimeRange(
-                CMTimeRange(start: .zero, duration: trackTimeRange.duration),
-                of: track,
-                at: startTime
-            )
+            
+            if let audioTrack = try await asset.loadTracks(withMediaType: .audio).first {
+                let audioTrackTimeRange = try await audioTrack.load(.timeRange)
+                let mutableAudioTrack = compositionDefaultTrack(for: audioTrack.mediaType)
+                try mutableAudioTrack?.insertTimeRange(
+                    CMTimeRange(start: .zero, duration: audioTrackTimeRange.duration),
+                    of: audioTrack,
+                    at: startTime
+                )
+            }
         }
     }
     

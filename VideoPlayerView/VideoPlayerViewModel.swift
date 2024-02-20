@@ -16,7 +16,7 @@ final class VideoPlayerViewModel: NSObject, ObservableObject {
         case loading
         case ready
     }
-
+    
     enum PlaybackState {
         case stopped
         case paused
@@ -28,10 +28,12 @@ final class VideoPlayerViewModel: NSObject, ObservableObject {
     @Published var startedPlaying = false
     @Published var videoGravity: AVLayerVideoGravity = .resizeAspectFill
     @Published var loop = true
+    @Published var isMuted = false
     @Published var playbackState: PlaybackState = .playing
     @Published var assetState: AssetState = .empty
     @Published var isPauseDisabled = false
     @Published var showProgress = true
+    @Published var videoProgress = 0.0
     
     var asset: AVAsset? { playerItem?.asset }
     
@@ -58,35 +60,68 @@ final class VideoPlayerViewModel: NSObject, ObservableObject {
     deinit {
         removeObservers(playerItem: playerItem)
     }
+}
+
+// MARK: - Public Methods
+
+extension VideoPlayerViewModel {
+    public func setLoading() {
+        playbackState = .playing
+    }
     
-    func play() {
+    public func setReady() {
+        assetState = .ready
+    }
+    
+    public func play() {
+        playbackState = .playing
         shouldPlay = true
         player.play()
     }
     
-    func pause() {
+    public func pause() {
+        playbackState = .paused
         shouldPlay = false
         player.pause()
     }
     
-    func stop() {
+    public func stop() {
+        playbackState = .paused
         pause()
-        seekTo(time: .zero)
+        seekToStart()
     }
     
-    func seekTo(time: CMTime) {
+    public func seekTo(time: CMTime) {
         guard player.status == .readyToPlay, playerItem?.status == .readyToPlay else { return }
         player.seek(to: time)
+        updatePlaybackProgress(withTime: time)
     }
     
-    func seekToStart() {
+    public func seekToStart() {
         seekTo(time: .zero)
     }
     
-    func invalidate() {
+    public func invalidate() {
         player.seek(to: .zero)
         player.pause()
         player.replaceCurrentItem(with: nil)
+    }
+    
+    public func updatePlaybackProgress(withTime time: CMTime) {
+        guard let asset else {
+            videoProgress = 0.0
+            return
+        }
+        
+        let assetDuration = asset.duration.seconds
+        let currentTime = time.seconds
+        assert(assetDuration.isFinite)
+        assert(currentTime.isFinite)
+        guard assetDuration.isFinite, currentTime.isFinite else { return }
+        
+        let progress = Double(currentTime / assetDuration)
+        
+        videoProgress = min(progress, 1)
     }
 }
 

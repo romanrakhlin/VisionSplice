@@ -25,6 +25,7 @@ struct EditorView: View {
     @State var isCreatePresented = false
     @State var isActionsSheetPresented = false
     @Binding var isSharePresented: Bool
+    @State var isCreateButtonEnabled = false
     
     @State private var playerView: VideoPlayerView?
     
@@ -38,7 +39,7 @@ struct EditorView: View {
                         Image(systemName: "xmark")
                             .resizable()
                             .frame(width: 18, height: 18)
-                            .font(.system(size: 14, weight: .bold, design: .rounded))
+                            .font(.system(size: 14, weight: .medium, design: .rounded))
                             .foregroundColor(.white)
                     }
                     
@@ -66,6 +67,7 @@ struct EditorView: View {
                             .font(.system(size: 20, weight: .bold, design: .rounded))
                             .foregroundColor(Constants.primaryColor)
                     }
+                    .disabled(!isCreateButtonEnabled)
                 }
                 
                 HStack(alignment: .center) {
@@ -82,50 +84,25 @@ struct EditorView: View {
             .padding(.horizontal, 20)
             
             ZStack {
-                ZStack {
-                    if playerViewModel.assetState != .ready {
-                        HStack {
+                if !videoViewModel.items.isEmpty {
+                    playerView
+                } else {
+                    HStack {
+                        Spacer()
+                        VStack {
                             Spacer()
-                            VStack {
-                                Spacer()
-                                ProgressView()
-                                    .progressViewStyle(.circular)
-                                Spacer()
-                            }
-                            Spacer()
-                        }
-                    } else {
-                        if !videoViewModel.items.isEmpty {
-                            playerView
-                        } else {
+                            ProgressView()
+                                .progressViewStyle(.circular)
                             Spacer()
                         }
+                        Spacer()
                     }
                 }
-                .background(Constants.secondaryColor)
-                .cornerRadius(10)
-                .padding(.top, 20)
-                .padding(.horizontal, 80)
-                
-                HStack(alignment: .center) {
-                    Button {
-                        print("Pick music")
-                    } label: {
-                        Image(systemName: "music.note")
-                            .font(.system(size: 20, weight: .bold, design: .rounded))
-                            .foregroundColor(.white)
-                            .padding()
-                            .background {
-                                Circle()
-                                    .fill(Constants.primaryColor)
-                                    .frame(width: 38, height: 38)
-                            }
-                    }
-                    
-                    Spacer()
-                }
-                .padding(.leading, 10)
             }
+            .background(Constants.secondaryColor)
+            .cornerRadius(10)
+            .padding(.top, 20)
+            .padding(.horizontal, 40)
             
             FramesCarouselView(
                 cameraViewModel: cameraViewModel,
@@ -153,6 +130,17 @@ struct EditorView: View {
         }
         .background(Constants.backgroundColor)
         .onAppear {
+            videoViewModel.onStartingRegeneration = {
+                playerViewModel.stop()
+                playerViewModel.setLoading()
+                isCreateButtonEnabled = false
+            }
+            videoViewModel.onEndingRegeneration = {
+                playerViewModel.setReady()
+                playerViewModel.play()
+                isCreateButtonEnabled = true
+            }
+            
             playerView = VideoPlayerView(viewModel: playerViewModel)
             appendItem(with: sourceItem)
         }
@@ -178,6 +166,9 @@ struct EditorView: View {
                     appendItem(with: image)
                 }
             }
+        }
+        .onChange(of: isActionsSheetPresented) { isActionsSheetPresented in
+            isActionsSheetPresented ? playerViewModel.pause() : playerViewModel.play()
         }
         .onChange(of: isCreatePresented) { isCreatePresented in
             isCreatePresented ? playerViewModel.pause() : playerViewModel.play()

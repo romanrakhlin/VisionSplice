@@ -5,23 +5,41 @@
 //  Created by Roman Rakhlin on 2/18/24.
 //
 
-import Foundation
+import AVFoundation
 
-struct ResultModel: Identifiable {
-    let id: Int
+struct ResultModel: Identifiable, Hashable {
+    
+    let id: String
     let video: URL
     let thumbnail: URL
+    let date: Date
     
-    init(id: Int, video: URL, thumbnail: URL) {
+    private let dateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        return formatter
+    }()
+    
+    var durationString: String {
+        AVAsset(url: video).formattedDuration
+    }
+    
+    var dateString: String {
+        dateFormatter.string(from: date)
+    }
+    
+    init(id: String, video: URL, thumbnail: URL, date: Date) {
         self.id = id
         self.video = video
         self.thumbnail = thumbnail
+        self.date = date
     }
 }
 
 extension ResultModel {
     init(object: ResultObject) {
         self.id = object.id
+        self.date = object.date
         
         let videoURL = URL(fileURLWithPath: NSTemporaryDirectory())
             .appendingPathComponent(UUID().uuidString)

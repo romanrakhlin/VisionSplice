@@ -21,35 +21,11 @@ struct VideoPlayerView: View {
                 videoGravity: $viewModel.videoGravity,
                 isMuted: $viewModel.isMuted
             )
-            .onTapGesture {
-                guard viewModel.assetState == .ready, !viewModel.isPauseDisabled else { return }
-                    
-                switch viewModel.playbackState {
-                case .stopped, .paused:
-                    viewModel.play()
-                case .playing:
-                    viewModel.pause()
-                }
-            }
                 
-            Rectangle()
-                .fill(.clear)
-                .background {
-                    if viewModel.assetState == .loading {
-                        ProgressView()
-                            .progressViewStyle(.circular)
-                    } else if viewModel.assetState == .ready && !viewModel.isPauseDisabled {
-                        if viewModel.playbackState == .playing {
-                            Image(systemName: "pause.fill")
-                                .font(.system(size: 44, weight: .bold, design: .rounded))
-                                .foregroundColor(.white)
-                        } else {
-                            Image(systemName: "play.fill")
-                                .font(.system(size: 44, weight: .bold, design: .rounded))
-                                .foregroundColor(.white)
-                        }
-                    }
-                }
+            if viewModel.assetState == .loading {
+                ProgressView()
+                    .progressViewStyle(.circular)
+            }
             
             if viewModel.showProgress {
                 VStack {

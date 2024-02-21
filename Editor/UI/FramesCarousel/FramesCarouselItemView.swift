@@ -15,8 +15,8 @@ struct FramesCarouselItemView: View {
     @State var thumbnail: Image?
     
     private let size = CGSize(
-        width: UIDevice.current.userInterfaceIdiom == .pad ? 120 : 60,
-        height: UIDevice.current.userInterfaceIdiom == .pad ? 160 : 80
+        width: UIDevice.current.userInterfaceIdiom == .pad ? 120 : 75,
+        height: UIDevice.current.userInterfaceIdiom == .pad ? 160 : 100
     )
     
     var body: some View {
@@ -25,6 +25,7 @@ struct FramesCarouselItemView: View {
                 Rectangle()
                     .fill(Constants.secondaryColor)
                     .frame(width: size.width, height: size.height)
+                    .cornerRadius(10)
                 
                 Image(systemName: "plus")
                     .font(.system(size: 32, weight: .bold, design: .rounded))
@@ -47,7 +48,7 @@ struct FramesCarouselItemView: View {
                             Spacer()
                             
                             Text(String(format:"%.1f", duration))
-                                .font(.system(size: 14, weight: .medium, design: .rounded))
+                                .font(.system(size: 16, weight: .medium, design: .rounded))
                                 .foregroundColor(.white)
                         }
                         .padding(.bottom, 8)
@@ -55,7 +56,6 @@ struct FramesCarouselItemView: View {
                 }
             }
         }
-        .cornerRadius(10)
         .shadow(radius: 4)
         .onAppear { updateThumbnail() }
     }

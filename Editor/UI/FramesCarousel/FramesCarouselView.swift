@@ -16,24 +16,38 @@ struct FramesCarouselView: View {
     
     @Binding var selectedFrame: (any FrameItem)?
     @Binding var isCreatePresented: Bool
-    @Binding var isActionsSheetPresented: Bool
     
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 18) {
                 ForEach(videoModel.items, id: \.id) { item in
-                    FramesCarouselItemView(frame: item)
-                        .onTapGesture {
-                            selectedFrame = item
-                            isActionsSheetPresented.toggle()
+                    ZStack {
+                        FramesCarouselItemView(frame: item)
+                            .cornerRadius(10)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 10)
+                                    .inset(by: 1)
+                                    .stroke(.white, lineWidth: selectedFrame?.id == item.id ? 4 : 0)
+                            )
+                        
+                        Image(systemName: "slider.horizontal.3")
+                            .font(.system(size: 30, weight: .regular, design: .rounded))
+                            .foregroundColor(.white)
+                            .opacity(selectedFrame?.id == item.id ? 1 : 0)
+                    }
+                    .onTapGesture {
+                        withAnimation {
+                            selectedFrame = selectedFrame?.id == item.id ? nil : item
                         }
-                        .onDrag({
-                            draggedFrame = item
-                            let nsItem = NSItemProvider(object: NSString(string: item.id.uuidString))
-                            nsItem.suggestedName = item.id.uuidString
-                            return nsItem
-                        })
-                        .onDrop(of: [.text], delegate: FramesDropDelegate(frame: item, videoModel: videoModel, draggedFrame: $draggedFrame))
+                    }
+                    .onDrag({
+                        selectedFrame = nil
+                        draggedFrame = item
+                        let nsItem = NSItemProvider(object: NSString(string: item.id.uuidString))
+                        nsItem.suggestedName = item.id.uuidString
+                        return nsItem
+                    })
+                    .onDrop(of: [.text], delegate: FramesDropDelegate(frame: item, videoModel: videoModel, draggedFrame: $draggedFrame))
                 }
                 
                 FramesCarouselItemView(isEmptyItem: true)

@@ -25,7 +25,7 @@ class CoreDataService: NSObject, ObservableObject, NSFetchedResultsControllerDel
         self.managedObjectContext = persistentStore.context
         
         let fetchRequest: NSFetchRequest<ResultObject> = ResultObject.fetchRequest() as! NSFetchRequest<ResultObject>
-        fetchRequest.sortDescriptors = [NSSortDescriptor(key: "id", ascending: false)]
+        fetchRequest.sortDescriptors = [NSSortDescriptor(key: "date", ascending: false)]
         
         fetchedObjects = NSFetchedResultsController(
             fetchRequest: fetchRequest,
@@ -64,6 +64,7 @@ extension CoreDataService {
         newObject.setValue(entity.id, forKey: "id")
         newObject.setValue(video, forKey: "video")
         newObject.setValue(thumbnail, forKey: "thumbnail")
+        newObject.setValue(entity.date, forKey: "date")
         
         saveContext()
     }

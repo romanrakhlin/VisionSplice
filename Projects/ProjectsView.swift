@@ -10,56 +10,84 @@ struct ProjectsView: View {
     @State private var isCameraPresented = false
     @State private var isEditorPresented = false
     @State private var isSharePresented = false
+    @State private var isActionSheetPresented = false
     
     @State private var sourceItem: FrameItemSource?
-    
-    let columns = [
-        GridItem(.flexible(minimum: 64), spacing: 12),
-        GridItem(.flexible(minimum: 64), spacing: 12),
-        GridItem(.flexible(minimum: 64), spacing: 12),
-        GridItem(.flexible(minimum: 64), spacing: 12)
-    ]
+    @State private var resultToDelete: ResultModel?
     
     var body: some View {
-        VStack {
-            HStack {
-                Text("Projects")
-                    .font(.system(size: 38, weight: .bold, design: .rounded))
-                    .foregroundColor(.white)
-                
-                Spacer()
-            }
-            .padding(.bottom, 10)
-            .padding(.horizontal, 20)
-            
-            ScrollView(showsIndicators: false) {
-                LazyVGrid(columns: columns, spacing: 12) {
-                    GeometryReader { proxy in
-                        ZStack {
-                            RoundedRectangle(cornerRadius: 14)
-                                .fill(Constants.secondaryColor)
-                            
-                            Image(systemName: "plus")
-                                .font(.system(size: 36, weight: .bold, design: .rounded))
-                                .foregroundColor(.white.opacity(0.8))
-                        }
-                        .frame(width: proxy.size.width, height: proxy.size.height)
-                        .cornerRadius(14)
+        ZStack {
+            VStack {
+                HStack {
+                    VStack(alignment: .leading) {
+                        Text("🍿 My Projects")
+                            .font(.system(size: 38, weight: .black, design: .rounded))
+                            .foregroundColor(.white)
                     }
-                    .aspectRatio(1, contentMode: .fit)
-                    .onTapGesture { isCameraPresented = true }
                     
-                    ForEach(projectsViewModel.results, id: \.id) { result in
-                        ResulItemView(result: result)
-                            .onTapGesture {
-                                shareViewModel.setPlayerItemWith(url: result.video)
-                                isSharePresented = true
-                            }
-                    }
+                    Spacer()
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .padding(.top, 10)
+                .padding(.top, 40)
+                .padding(.bottom, 10)
                 .padding(.horizontal, 20)
+                
+                ScrollView(showsIndicators: false) {
+                    LazyVGrid(
+                        columns: Array(
+                            repeating: GridItem(.flexible(minimum: 64), spacing: 16),
+                            count: UIDevice.current.userInterfaceIdiom == .pad ? 4 : 2
+                        ),
+                        spacing: 100
+                    ) {
+                        ForEach(projectsViewModel.results, id: \.id) { result in
+                            ResulItemView(
+                                result: result, 
+                                shareViewModel: shareViewModel,
+                                isActionSheetPresented: $isActionSheetPresented,
+                                isSharePresented: $isSharePresented,
+                                resultToDelete: $resultToDelete
+                            )
+                        }
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .padding(.top, 10)
+                    .padding(.horizontal, 20)
+                    
+                    Spacer(minLength: 200)
+                }
+                .actionSheet(isPresented: $isActionSheetPresented) {
+                    ActionSheet(title: Text("Manipulate project"), message: nil, buttons: [
+                        .destructive(Text("Delete"), action: {
+                            guard let resultToDelete else { return }
+                            
+                            projectsViewModel.delete(result: resultToDelete)
+                            self.resultToDelete = nil
+                        }),
+                        .cancel()
+                    ])
+                }
+            }
+            
+            VStack {
+                Spacer()
+                
+                Button {
+                    isCameraPresented = true
+                } label: {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 16)
+                            .fill(Constants.primaryColor)
+                            .frame(minHeight: 32, maxHeight: 60)
+                            .padding(.horizontal, 20)
+                            .padding(.vertical, 10)
+                        
+                        Text("Create New Video")
+                            .font(.system(size: 18, weight: .bold, design: .rounded))
+                            .foregroundColor(.white)
+                    }
+                    .background(Constants.secondaryColor)
+                }
+                .padding(.top, 16)
             }
         }
         .background(Constants.backgroundColor)

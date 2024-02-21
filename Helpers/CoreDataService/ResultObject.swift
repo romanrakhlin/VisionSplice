@@ -10,7 +10,8 @@ import CoreData
 
 @objc(ResultObject)
 class ResultObject: NSManagedObject {
-    @NSManaged var id: Int
+    @NSManaged var id: String
     @NSManaged var video: Data
     @NSManaged var thumbnail: Data
+    @NSManaged var date: Date
 }

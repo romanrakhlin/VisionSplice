@@ -22,7 +22,7 @@ class PersistentStore {
         
         let idAttribute = NSAttributeDescription()
         idAttribute.name = "id"
-        idAttribute.type = .integer64
+        idAttribute.type = .string
         resultEntity.properties.append(idAttribute)
         
         let videoAttribute = NSAttributeDescription()
@@ -35,10 +35,10 @@ class PersistentStore {
         thumbnailAttribute.type = .binaryData
         resultEntity.properties.append(thumbnailAttribute)
         
-        let indexAttribute = NSAttributeDescription()
-        indexAttribute.name = "index"
-        indexAttribute.type = .integer64
-        resultEntity.properties.append(indexAttribute)
+        let dateAttribute = NSAttributeDescription()
+        dateAttribute.name = "date"
+        dateAttribute.type = .date
+        resultEntity.properties.append(dateAttribute)
         
         let model = NSManagedObjectModel()
         model.entities = [resultEntity]

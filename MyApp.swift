@@ -6,7 +6,7 @@ struct MyApp: App {
         WindowGroup {
             ProjectsView()
 //            EditorView(sourceItem: UIImage(named: "Pumpkin")!)
-                .preferredColorScheme(.light)
+                .preferredColorScheme(.dark)
         }
     }
 }

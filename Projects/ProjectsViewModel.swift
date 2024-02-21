@@ -14,7 +14,7 @@ final class ProjectsViewModel: ObservableObject {
     
     @Published var results: [ResultModel] = []
     
-    var anyCancellable: AnyCancellable? = nil
+    var anyCancellable: AnyCancellable?
     
     init() {
         results = resultsStorageWorker.objects.map { ResultModel(object: $0) }
@@ -29,5 +29,9 @@ final class ProjectsViewModel: ObservableObject {
     
     public func create(result: ResultModel) {
         resultsStorageWorker.create(result)
+    }
+    
+    public func delete(result: ResultModel) {
+        resultsStorageWorker.deleteObjectWith(id: result.id)
     }
 }

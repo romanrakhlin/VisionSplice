@@ -23,7 +23,6 @@ struct EditorView: View {
     @State var selectedFrame: (any FrameItem)?
     
     @State var isCreatePresented = false
-    @State var isActionsSheetPresented = false
     @Binding var isSharePresented: Bool
     @State var isCreateButtonEnabled = false
     
@@ -32,101 +31,174 @@ struct EditorView: View {
     var body: some View {
         VStack {
             ZStack {
-                HStack(alignment: .center) {
-                    Button {
-                        presentationMode.wrappedValue.dismiss()
-                    } label: {
-                        Image(systemName: "xmark")
-                            .resizable()
-                            .frame(width: 18, height: 18)
-                            .font(.system(size: 14, weight: .medium, design: .rounded))
-                            .foregroundColor(.white)
-                    }
-                    
-                    Spacer()
-                    
-                    Button {
-                        playerViewModel.pause()
-                        
-                        Task(priority: .userInitiated) {
-                            let (playerItem, videoURL, thumbnailURL) = try await videoViewModel.export()
-                            shareViewModel.playerItem = playerItem
-                            
-                            let result = ResultModel(
-                                id: projectsViewModel.results.count,
-                                video: videoURL,
-                                thumbnail: thumbnailURL
-                            )
-                            projectsViewModel.create(result: result)
+                ZStack {
+                    if !videoViewModel.items.isEmpty {
+                        playerView
+                    } else {
+                        HStack {
+                            Spacer()
+                            VStack {
+                                Spacer()
+                                ProgressView()
+                                    .progressViewStyle(.circular)
+                                Spacer()
+                            }
+                            Spacer()
                         }
-                        
-                        presentationMode.wrappedValue.dismiss()
-                        isSharePresented = true
-                    } label: {
-                        Text("Create")
-                            .font(.system(size: 22, weight: .bold, design: .rounded))
-                            .foregroundColor(.white)
                     }
-                    .disabled(!isCreateButtonEnabled)
                 }
+                .background(Constants.secondaryColor)
+                .cornerRadius(16)
+                .padding(.top, 20)
+                .padding(.horizontal, 64)
                 
-                HStack(alignment: .center) {
-                    Spacer()
-                    
-                    Text("Editor")
-                        .font(.system(size: 24, weight: .heavy, design: .rounded))
-                        .foregroundColor(.white)
-                    
-                    Spacer()
-                }
-            }
-            .padding(.top, 10)
-            .padding(.horizontal, 20)
-            
-            ZStack {
-                if !videoViewModel.items.isEmpty {
-                    playerView
-                } else {
-                    HStack {
-                        Spacer()
-                        VStack {
-                            Spacer()
-                            ProgressView()
-                                .progressViewStyle(.circular)
-                            Spacer()
+                VStack {
+                    HStack(alignment: .center) {
+                        Button {
+                            presentationMode.wrappedValue.dismiss()
+                        } label: {
+                            Image(systemName: "xmark")
+                                .font(.system(size: 22, weight: .medium, design: .rounded))
+                                .foregroundColor(.white)
                         }
+                        
                         Spacer()
+                        
+                        HStack(spacing: 14) {
+                            Button {
+                                print("Show alert to pick export resolution.")
+                            } label: {
+                                Image(systemName: "gearshape")
+                                    .font(.system(size: 22, weight: .medium, design: .rounded))
+                                    .foregroundColor(.white)
+                            }
+                            
+                            Button {
+                                playerViewModel.pause()
+                                
+                                Task(priority: .userInitiated) {
+                                    let (playerItem, videoURL, thumbnailURL) = try await videoViewModel.export()
+                                    shareViewModel.playerItem = playerItem
+                                    
+                                    let result = ResultModel(
+                                        id: UUID().uuidString,
+                                        video: videoURL,
+                                        thumbnail: thumbnailURL,
+                                        date: Date.now
+                                    )
+                                    projectsViewModel.create(result: result)
+                                }
+                                
+                                presentationMode.wrappedValue.dismiss()
+                                isSharePresented = true
+                            } label: {
+                                Text("Create")
+                                    .foregroundColor(.black)
+                                    .font(.system(size: 18, weight: .bold, design: .rounded))
+                                    .padding(.vertical, 6)
+                                    .padding(.horizontal, 14)
+                                    .background(Color.white)
+                                    .clipShape(Capsule())
+                            }
+                            .disabled(!isCreateButtonEnabled)
+                        }
                     }
+                    
+                    Spacer()
+                    
+                    HStack(alignment: .center) {
+                        Button {
+                            guard playerViewModel.assetState == .ready else { return }
+                                
+                            switch playerViewModel.playbackState {
+                            case .stopped, .paused:
+                                playerViewModel.play()
+                            case .playing:
+                                playerViewModel.pause()
+                            }
+                        } label: {
+                            if playerViewModel.playbackState == .playing {
+                                Image(systemName: "pause.fill")
+                                    .font(.system(size: 22, weight: .medium, design: .rounded))
+                                    .foregroundColor(.white)
+                            } else {
+                                Image(systemName: "play.fill")
+                                    .font(.system(size: 22, weight: .medium, design: .rounded))
+                                    .foregroundColor(.white)
+                            }
+                        }
+                        
+                        Spacer()
+                        
+                        Button {
+                            playerViewModel.videoGravity = playerViewModel.videoGravity == .resizeAspect ? .resizeAspectFill : .resizeAspect
+                        } label: {
+                            Image(systemName: playerViewModel.videoGravity == .resizeAspect ? "arrow.up.left.and.arrow.down.right" : "arrow.down.forward.and.arrow.up.backward")
+                                .font(.system(size: 24, weight: .medium, design: .rounded))
+                                .foregroundColor(.white)
+                        }
+                    }
+                    .padding(.bottom, 20)
                 }
+                .padding(.top, 10)
+                .padding(.horizontal, 20)
             }
-            .background(Constants.secondaryColor)
-            .cornerRadius(10)
-            .padding(.top, 20)
-            .padding(.horizontal, 40)
             
             FramesCarouselView(
                 cameraViewModel: cameraViewModel,
                 videoModel: videoViewModel,
                 selectedFrame: $selectedFrame,
-                isCreatePresented: $isCreatePresented,
-                isActionsSheetPresented: $isActionsSheetPresented
+                isCreatePresented: $isCreatePresented
             )
-            .actionSheet(isPresented: $isActionsSheetPresented) {
-                ActionSheet(title: Text("Manipulate frame"), message: nil, buttons: [
-                    .default(Text("Replace"), action: {
-                        isCreatePresented = true
-                    }),
-                    .destructive(Text("Remove"), action: {
-                        guard 
-                            let selectedFrame,
-                            let indexToRemove = videoViewModel.indexForItem(selectedFrame)
-                        else { return }
-                        
-                        videoViewModel.removeItem(at: indexToRemove)
-                    }),
-                    .cancel()
-                ])
+            
+            HStack(spacing: 18) {
+                Button {
+                    isCreatePresented = true
+                } label: {
+                    Image(systemName: "repeat")
+                        .font(.system(size: 24, weight: .medium, design: .rounded))
+                        .foregroundColor(.white)
+                }
+
+                Button {
+                    guard
+                        let selectedFrame,
+                        let indexToRemove = videoViewModel.indexForItem(selectedFrame)
+                    else { return }
+                    
+                    videoViewModel.removeItem(at: indexToRemove)
+                } label: {
+                    Image(systemName: "trash")
+                        .font(.system(size: 24, weight: .regular, design: .rounded))
+                        .foregroundColor(.white)
+                }
+                
+                Button {
+                   print("Mute frame")
+                } label: {
+                    Image(systemName: "speaker.wave.3") // speaker.slash.fill
+                        .font(.system(size: 24, weight: .regular, design: .rounded))
+                        .foregroundColor(.white)
+                }
+                
+                Button {
+                   print("Crop Frame")
+                } label: {
+                    Image(systemName: "crop")
+                        .font(.system(size: 24, weight: .regular, design: .rounded))
+                        .foregroundColor(.white)
+                }
+                
+                Button {
+                   print("Trim Frame")
+                } label: {
+                    Image(systemName: "scissors")
+                        .font(.system(size: 24, weight: .regular, design: .rounded))
+                        .foregroundColor(.white)
+                }
             }
+            .padding(.bottom, 22)
+            .opacity(selectedFrame == nil ? 0 : 1)
         }
         .background(Constants.backgroundColor)
         .onAppear {
@@ -167,9 +239,6 @@ struct EditorView: View {
                 }
             }
         }
-        .onChange(of: isActionsSheetPresented) { isActionsSheetPresented in
-            isActionsSheetPresented ? playerViewModel.pause() : playerViewModel.play()
-        }
         .onChange(of: isCreatePresented) { isCreatePresented in
             isCreatePresented ? playerViewModel.pause() : playerViewModel.play()
         }
@@ -189,7 +258,7 @@ struct EditorView: View {
             
             if videoViewModel.items.count == 1 {
                 await MainActor.run {
-                    self.updatePlayer()
+                    playerViewModel.playerItem = videoViewModel.createPlayerItem
                 }
             }
         }
@@ -207,9 +276,5 @@ struct EditorView: View {
                 assertionFailure(error.localizedDescription)
             }
         }
-    }
-    
-    private func updatePlayer() {
-        playerViewModel.playerItem = videoViewModel.createPlayerItem
     }
 }

@@ -27,8 +27,8 @@ struct FramesCarouselItemView: View {
                     .frame(width: size.width, height: size.height)
                 
                 Image(systemName: "plus")
-                    .font(.system(size: 32, weight: .medium, design: .rounded))
-                    .foregroundColor(Constants.primaryColor)
+                    .font(.system(size: 32, weight: .bold, design: .rounded))
+                    .foregroundColor(.white.opacity(0.8))
             } else {
                 if let thumbnail, let duration = frame?.duration.seconds {
                     VStack {
@@ -41,6 +41,7 @@ struct FramesCarouselItemView: View {
                     .overlay {
                         Rectangle()
                             .fill(.linearGradient(Gradient(colors: [.clear, .black.opacity(0.8)]), startPoint: .top, endPoint: .bottom))
+                            .padding(.top, 18)
                         
                         VStack {
                             Spacer()
@@ -49,6 +50,7 @@ struct FramesCarouselItemView: View {
                                 .font(.system(size: 14, weight: .medium, design: .rounded))
                                 .foregroundColor(.white)
                         }
+                        .padding(.bottom, 8)
                     }
                 }
             }

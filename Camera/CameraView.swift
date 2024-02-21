@@ -56,7 +56,6 @@ struct CameraView: View {
                         .disabled(arebuttonsBlocked)
                         .opacity(sessionIsRunning == true ? 1 : 0)
                     }
-                    .padding(.top)
                     .opacity(viewModel.isRecording ? 0 : 1)
                     
                     Spacer()
@@ -132,8 +131,8 @@ struct CameraView: View {
                         }
                         .padding(.bottom, 14)
                         .disabled(arebuttonsBlocked)
+                        .opacity(viewModel.isRecording ? 0 : 1)
                     }
-                    .padding(.bottom)
                     .opacity(sessionIsRunning == true ? 1 : 0)
                 } else {
                     HStack {
@@ -174,6 +173,7 @@ struct CameraView: View {
                 }
             }
             .padding(.horizontal)
+            .padding(.vertical)
             
             if arebuttonsBlocked {
                 HStack {

@@ -21,58 +21,48 @@ struct ProjectsView: View {
     ]
     
     var body: some View {
-        ZStack {
-            VStack {
-                HStack {
-                    Text("Projects")
-                        .font(.system(size: 38, weight: .bold, design: .rounded))
-                        .foregroundColor(.white)
-                    
-                    Spacer()
-                }
-                .padding(.bottom, 14)
-                .padding(.horizontal, 20)
+        VStack {
+            HStack {
+                Text("Projects")
+                    .font(.system(size: 38, weight: .bold, design: .rounded))
+                    .foregroundColor(.white)
                 
-                ScrollView(showsIndicators: false) {
-                    LazyVGrid(columns: columns, spacing: 12) {
-                        ForEach(projectsViewModel.results, id: \.id) { result in
-                            ResulItemView(result: result)
-                                .onTapGesture {
-                                    shareViewModel.setPlayerItemWith(url: result.video)
-                                    isSharePresented = true
-                                }
-                        }
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .padding(.top, 14)
-                    .padding(.horizontal, 20)
-                }
-                .background(Constants.backgroundColor)
-            }
-            .background(Constants.secondaryColor)
-            
-            VStack {
                 Spacer()
-                
-                Button {
-                    isCameraPresented = true
-                } label: {
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 16)
-                            .fill(Constants.primaryColor)
-                            .frame(minHeight: 32, maxHeight: 60)
-                            .padding(.horizontal, 20)
-                            .padding(.vertical, 10)
-                        
-                        Text("Create New Video")
-                            .font(.system(size: 16, weight: .semibold, design: .rounded))
-                            .foregroundColor(.white)
+            }
+            .padding(.bottom, 10)
+            .padding(.horizontal, 20)
+            
+            ScrollView(showsIndicators: false) {
+                LazyVGrid(columns: columns, spacing: 12) {
+                    GeometryReader { proxy in
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 14)
+                                .fill(Constants.secondaryColor)
+                            
+                            Image(systemName: "plus")
+                                .font(.system(size: 36, weight: .bold, design: .rounded))
+                                .foregroundColor(.white.opacity(0.8))
+                        }
+                        .frame(width: proxy.size.width, height: proxy.size.height)
+                        .cornerRadius(14)
                     }
-                    .background(Constants.secondaryColor)
+                    .aspectRatio(1, contentMode: .fit)
+                    .onTapGesture { isCameraPresented = true }
+                    
+                    ForEach(projectsViewModel.results, id: \.id) { result in
+                        ResulItemView(result: result)
+                            .onTapGesture {
+                                shareViewModel.setPlayerItemWith(url: result.video)
+                                isSharePresented = true
+                            }
+                    }
                 }
-                .padding(.top, 16)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .padding(.top, 10)
+                .padding(.horizontal, 20)
             }
         }
+        .background(Constants.backgroundColor)
         .fullScreenCover(isPresented: $isCameraPresented) {
             CameraView(viewModel: cameraViewModel)
         }

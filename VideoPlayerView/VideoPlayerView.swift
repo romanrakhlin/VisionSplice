@@ -41,12 +41,12 @@ struct VideoPlayerView: View {
                     } else if viewModel.assetState == .ready && !viewModel.isPauseDisabled {
                         if viewModel.playbackState == .playing {
                             Image(systemName: "pause.fill")
-                                .font(.system(size: 36, weight: .bold, design: .rounded))
-                                .foregroundColor(Constants.primaryColor)
+                                .font(.system(size: 44, weight: .bold, design: .rounded))
+                                .foregroundColor(.white)
                         } else {
                             Image(systemName: "play.fill")
-                                .font(.system(size: 36, weight: .bold, design: .rounded))
-                                .foregroundColor(Constants.primaryColor)
+                                .font(.system(size: 44, weight: .bold, design: .rounded))
+                                .foregroundColor(.white)
                         }
                     }
                 }
@@ -56,7 +56,7 @@ struct VideoPlayerView: View {
                     Spacer()
                     
                     ProgressView(value: viewModel.videoProgress, total: 1)
-                        .accentColor(Constants.primaryColor)
+                        .accentColor(.white)
                         .scaleEffect(x: 1, y: 4, anchor: .center)
                 }
             }

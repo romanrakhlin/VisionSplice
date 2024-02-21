@@ -64,8 +64,8 @@ struct EditorView: View {
                         isSharePresented = true
                     } label: {
                         Text("Create")
-                            .font(.system(size: 20, weight: .bold, design: .rounded))
-                            .foregroundColor(Constants.primaryColor)
+                            .font(.system(size: 22, weight: .bold, design: .rounded))
+                            .foregroundColor(.white)
                     }
                     .disabled(!isCreateButtonEnabled)
                 }

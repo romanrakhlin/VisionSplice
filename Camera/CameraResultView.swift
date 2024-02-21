@@ -31,6 +31,7 @@ public struct CameraResultView: View {
             }
         }
         .onAppear {
+            playerViewModel.showProgress = false
             playerViewModel.isPauseDisabled = true
             configure()
         }

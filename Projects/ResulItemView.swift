@@ -21,24 +21,25 @@ struct ResulItemView: View {
                         .resizable()
                         .scaledToFill()
                         .frame(width: proxy.size.width, height: proxy.size.height)
+                    
+                    Rectangle()
+                        .fill(.black.opacity(0.2))
+                    
+                    Image(systemName: "play.fill")
+                        .font(.system(size: 36, weight: .bold, design: .rounded))
+                        .foregroundColor(.white.opacity(0.8))
                 } else {
-                    Image(systemName: "questionmark")
-                        .font(.system(size: 22, weight: .bold, design: .rounded))
-                        .foregroundColor(.white)
-                        .background {
-                            RoundedRectangle(cornerRadius: 12)
-                                .fill(Constants.secondaryColor)
-                        }
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 14)
+                            .fill(Constants.secondaryColor)
+                        
+                        Image(systemName: "questionmark")
+                            .font(.system(size: 36, weight: .bold, design: .rounded))
+                            .foregroundColor(.white.opacity(0.8))
+                    }
                 }
-                
-                Rectangle()
-                    .fill(.black.opacity(0.2))
-                
-                Image(systemName: "play.fill")
-                    .font(.system(size: 22, weight: .bold, design: .rounded))
-                    .foregroundColor(Constants.primaryColor)
             }
-            .cornerRadius(12)
+            .cornerRadius(14)
         }
         .aspectRatio(1, contentMode: .fit)
         .onAppear {

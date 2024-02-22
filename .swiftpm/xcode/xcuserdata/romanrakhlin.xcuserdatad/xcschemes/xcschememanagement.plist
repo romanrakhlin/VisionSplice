@@ -17,6 +17,11 @@
 			<key>primary</key>
 			<true/>
 		</dict>
+		<key>SwiftStudentChallenge2024.swiftpm</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
 	</dict>
 </dict>
 </plist>

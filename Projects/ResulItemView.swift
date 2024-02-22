@@ -9,6 +9,7 @@ import SwiftUI
 
 struct ResulItemView: View {
     
+    let id: Int
     let result: ResultModel
     
     @State private var thumbnail: UIImage?
@@ -87,7 +88,7 @@ struct ResulItemView: View {
                 
                 HStack {
                     VStack(alignment: .leading, spacing: 6) {
-                        Text("Project \(1)")
+                        Text("Project \(id)")
                             .foregroundColor(.white)
                             .font(.system(size: 24, weight: .medium, design: .rounded))
                         

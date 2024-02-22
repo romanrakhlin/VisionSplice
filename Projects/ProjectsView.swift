@@ -42,6 +42,7 @@ struct ProjectsView: View {
                         ) {
                             ForEach(projectsViewModel.results, id: \.self) { result in
                                 ResulItemView(
+                                    id: projectsViewModel.getResultId(result: result),
                                     result: result,
                                     shareViewModel: shareViewModel,
                                     isActionSheetPresented: $isActionSheetPresented,

@@ -34,4 +34,9 @@ final class ProjectsViewModel: ObservableObject {
     public func delete(result: ResultModel) {
         resultsStorageWorker.deleteObjectWith(id: result.id)
     }
+    
+    public func getResultId(result: ResultModel) -> Int {
+        let index = results.firstIndex(of: result) ?? 0
+        return results.count - index
+    }
 }

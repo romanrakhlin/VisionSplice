@@ -1,6 +1,6 @@
 //
-//  File.swift
-//  
+//  FramesDropDelegate.swift
+//
 //
 //  Created by Roman Rakhlin on 2/6/24.
 //
@@ -10,6 +10,7 @@ import SwiftUI
 struct FramesDropDelegate: DropDelegate {
 
     let frame: (any FrameItem)
+    
     @ObservedObject var videoModel: VideoViewModel
     @Binding var draggedFrame: (any FrameItem)?
 

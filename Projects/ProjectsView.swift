@@ -1,3 +1,10 @@
+//
+//  ProjectsView.swift
+//  SwiftStudentChallenge2024
+//
+//  Created by Roman Rakhlin on 2/18/24.
+//
+
 import SwiftUI
 import Combine
 
@@ -127,12 +134,12 @@ struct ProjectsView: View {
         .fullScreenCover(isPresented: $isEditorPresented) {
             if let sourceItem {
                 EditorView(
-                    sourceItem: sourceItem,
-                    shareViewModel: shareViewModel,
-                    isSharePresented: $isSharePresented
+                    isSharePresented: $isSharePresented,
+                    sourceItem: sourceItem
                 )
                 .environmentObject(projectsViewModel)
                 .environmentObject(cameraViewModel)
+                .environmentObject(shareViewModel)
                 .onDisappear { self.sourceItem = nil }
             }
         }

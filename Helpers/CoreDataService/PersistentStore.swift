@@ -57,7 +57,7 @@ class PersistentStore {
         self.container = container
     }
     
-    func saveContext () {
+    func saveContext() {
         guard context.hasChanges else { return }
         
         do {

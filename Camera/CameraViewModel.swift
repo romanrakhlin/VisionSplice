@@ -1,7 +1,14 @@
+//
+//  CameraViewModel.swift
+//
+//
+//  Created by Roman Rakhlin on 2/8/24.
+//
+
 import SwiftUI
 import AVFoundation
 
-class CameraViewModel: NSObject, ObservableObject {
+final class CameraViewModel: NSObject, ObservableObject {
     
     enum Status {
         case unconfigured
@@ -12,7 +19,6 @@ class CameraViewModel: NSObject, ObservableObject {
     
     var preview: AVCaptureVideoPreviewLayer!
     
-    @Published var isReady = false
     @Published var session = AVCaptureSession()
     @Published var isFinished = false
     @Published var isShootTaken = false
@@ -206,7 +212,6 @@ class CameraViewModel: NSObject, ObservableObject {
     
     public func reset() {
         isFinished = false
-        isReady = false
         isShootTaken = false
         isVideo = false
         position = .front

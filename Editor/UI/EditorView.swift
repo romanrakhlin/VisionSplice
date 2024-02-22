@@ -13,20 +13,18 @@ struct EditorView: View {
     
     @EnvironmentObject var projectsViewModel: ProjectsViewModel
     @EnvironmentObject var cameraViewModel: CameraViewModel
-    
-    var sourceItem: FrameItemSource
+    @EnvironmentObject var shareViewModel: ShareViewModel
     
     @StateObject private var videoViewModel = VideoViewModel()
     @StateObject private var playerViewModel = VideoPlayerViewModel()
-    @ObservedObject var shareViewModel: ShareViewModel
     
     @State var selectedFrame: (any FrameItem)?
-    
     @State var isCreatePresented = false
     @Binding var isSharePresented: Bool
     @State var isCreateButtonEnabled = false
-    
     @State private var playerView: VideoPlayerView?
+    
+    var sourceItem: FrameItemSource
     
     var body: some View {
         VStack {

@@ -1,5 +1,5 @@
 //
-//  File.swift
+//  UIImage+Extension.swift
 //  
 //
 //  Created by Roman Rakhlin on 2/8/24.
@@ -9,13 +9,6 @@ import AVFoundation
 import UIKit
 
 extension UIImage {
-    func resized(to size: CGSize) -> UIImage? {
-        UIGraphicsBeginImageContextWithOptions(size, false, scale)
-        defer { UIGraphicsEndImageContext() }
-        draw(in: CGRect(origin: .zero, size: size))
-        return UIGraphicsGetImageFromCurrentImageContext()
-    }
-    
     func resized(toFit boxSize: CGSize) -> UIImage {
         let format = UIGraphicsImageRendererFormat.default()
         format.scale = self.scale

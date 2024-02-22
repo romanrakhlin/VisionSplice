@@ -1,5 +1,5 @@
 //
-//  File.swift
+//  VideoCompositor+Error.swift
 //  
 //
 //  Created by Roman Rakhlin on 2/13/24.

@@ -8,21 +8,22 @@
 import Foundation
 
 struct VideoConfigiration {
+    
     /// The size of the rendered video
     let videoSize: CGSize
-
+    
     /// Frames per second
     let fps: Int32
-
+    
     /// Bits  per second
     let bitrate: Float
-
+    
     /// Video quality preset
     let quality: VideoQuality
-
+    
     /// Output directory where all the temp files and the output will be stored. It must be already existent.
     let workingDirectoryURL: URL
-
+    
     let exportDirectoryURL: URL
 }
 
@@ -33,7 +34,7 @@ extension VideoConfigiration {
             fps: 30,
             bitrate: 4_000_000,
             quality: .fullHD,
-            workingDirectoryURL: FileManager.reelsWorkingDirectoryURL,
+            workingDirectoryURL: FileManager.videosWorkingDirectoryURL,
             exportDirectoryURL: FileManager.documentsDirectoryURL
         )
     }
@@ -44,8 +45,8 @@ extension VideoConfigiration {
             fps: 30,
             bitrate: 4_000_000,
             quality: .fullHD,
-            workingDirectoryURL: FileManager.reelsWorkingDirectoryURL,
-            exportDirectoryURL: FileManager.reelsWorkingDirectoryURL
+            workingDirectoryURL: FileManager.videosWorkingDirectoryURL,
+            exportDirectoryURL: FileManager.videosWorkingDirectoryURL
         )
     }
 }

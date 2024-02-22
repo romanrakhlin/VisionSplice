@@ -11,6 +11,7 @@ import CoreVideo
 import UIKit
 
 final class VideoViewModel: ObservableObject {
+    
     enum Error: Swift.Error {
         case indexOutOfRange
         case compositionVideoTrackFailed

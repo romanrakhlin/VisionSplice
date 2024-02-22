@@ -13,12 +13,12 @@ import UIKit
 // MARK: - Video Size
 
 extension AVAsset {
-    private var videoTrack: AVAssetTrack? {
-        return tracks(withMediaType: .video).first
-    }
-    
     var videoSize: CGSize {
         return videoTrack?.videoSize ?? .zero
+    }
+    
+    private var videoTrack: AVAssetTrack? {
+        return tracks(withMediaType: .video).first
     }
 }
 

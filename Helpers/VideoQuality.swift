@@ -1,6 +1,6 @@
 //
-//  File.swift
-//  
+//  VideoQuality.swift
+//
 //
 //  Created by Roman Rakhlin on 2/6/24.
 //
@@ -8,6 +8,7 @@
 import AVFoundation
 
 enum VideoQuality {
+    
     case highest
     case medium
     case low

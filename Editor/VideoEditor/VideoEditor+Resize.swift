@@ -8,38 +8,7 @@
 import AVFoundation
 
 extension VideoEditor {
-    enum ResizeError: Swift.Error {
-        case missingVideoTrack
-        case exportSessionInitializationFailed
-        case failedScale
-    }
-    
-    public static func export(videoAsset: AVAsset, outputURL: URL, framesPerSecond: Int32, targetSize: CGSize? = nil) async throws {
-        let videoTracks: [AVAssetTrack]
-        if #available(iOS 15.0, *) {
-            videoTracks = try await videoAsset.loadTracks(withMediaType: .video)
-        } else {
-            videoTracks = videoAsset.tracks(withMediaType: .video)
-        }
-        
-        guard let videoTrack = videoTracks.first else {
-            throw ResizeError.missingVideoTrack
-        }
-        
-        let resizeComposition = videoComposition(for: videoTrack, aspectFillSize: targetSize, framesPerSecond: framesPerSecond)
-        
-        guard let exportSession = AVAssetExportSession(asset: videoAsset, presetName: AVAssetExportPresetHighestQuality) else {
-            throw ResizeError.exportSessionInitializationFailed
-        }
-        
-        exportSession.videoComposition = resizeComposition
-        exportSession.outputURL = outputURL
-        exportSession.outputFileType = .mp4
-        
-        await exportSession.export()
-    }
-    
-    public static func videoComposition(for videoTrack: AVAssetTrack, aspectFillSize: CGSize?, framesPerSecond: Int32, timeRange: CMTimeRange? = nil) -> AVVideoComposition {
+    static func videoComposition(for videoTrack: AVAssetTrack, aspectFillSize: CGSize?, framesPerSecond: Int32, timeRange: CMTimeRange? = nil) -> AVVideoComposition {
         let sourceSize = videoTrack.videoSize
         let renderSize = aspectFillSize ?? sourceSize
         
@@ -69,7 +38,7 @@ extension VideoEditor {
         return composition
     }
     
-    public static func crop(videoAsset: AVAsset, with cropRect: CGRect, outputURL: URL) async throws {
+    static func crop(videoAsset: AVAsset, with cropRect: CGRect, outputURL: URL) async throws {
         let videoTracks: [AVAssetTrack]
         if #available(iOS 15.0, *) {
             videoTracks = try await videoAsset.loadTracks(withMediaType: .video)
@@ -113,42 +82,5 @@ extension VideoEditor {
         exportSession.outputFileType = .mp4
         
         await exportSession.export()
-    }
-}
-
-extension AVAssetTrack {
-    var fixedPreferredTransform: CGAffineTransform {
-        var t = preferredTransform
-        
-        switch(t.a, t.b, t.c, t.d) {
-        case (1, 0, 0, 1):
-            t.tx = 0
-            t.ty = 0
-        case (1, 0, 0, -1):
-            t.tx = 0
-            t.ty = naturalSize.height
-        case (-1, 0, 0, 1):
-            t.tx = naturalSize.width
-            t.ty = 0
-        case (-1, 0, 0, -1):
-            t.tx = naturalSize.width
-            t.ty = naturalSize.height
-        case (0, -1, 1, 0):
-            t.tx = 0
-            t.ty = naturalSize.width
-        case (0, 1, -1, 0):
-            t.tx = naturalSize.height
-            t.ty = 0
-        case (0, 1, 1, 0):
-            t.tx = 0
-            t.ty = 0
-        case (0, -1, -1, 0):
-            t.tx = naturalSize.height
-            t.ty = naturalSize.width
-        default:
-            break
-        }
-        
-        return t
     }
 }

@@ -57,7 +57,6 @@ extension CoreDataService {
             let video = try? Data(contentsOf: entity.video),
             let thumbnail = try? Data(contentsOf: entity.thumbnail)
         else {
-            print("Failed")
             return
         }
         

@@ -7,6 +7,8 @@
 
 import Foundation
 
+// MARK: - Directory URLs
+
 extension FileManager {
     static var documentsDirectoryURL: URL {
         if #available(iOS 16.0, *) {
@@ -19,37 +21,17 @@ extension FileManager {
         }
     }
     
-    static var cachesDirectoryURL: URL {
-        if #available(iOS 16.0, *) {
-            return URL.cachesDirectory
-        } else {
-            return FileManager.default.urls(
-                for: .cachesDirectory,
-                in: .userDomainMask
-            )[0]
-        }
-    }
-    
-    static var temporaryDirectoryURL: URL {
-        if #available(iOS 16.0, *) {
-            return URL.temporaryDirectory
-        } else {
-            return FileManager.default.temporaryDirectory
-        }
-    }
-    
-    static var homeDirectoryURL: URL {
-        if #available(iOS 16.0, *) {
-            return URL.homeDirectory
-        } else {
-            return URL(fileURLWithPath: NSHomeDirectory(), isDirectory: true)
-        }
-    }
-    
+    static let videosWorkingDirectoryURL: URL = {
+        let directoryURL = documentsDirectoryURL.appendingPathComponent("videos", isDirectory: true)
+        _ = FileManager.default.lookupOrCreate(directoryAt: directoryURL)
+
+        return directoryURL
+    }()
 }
 
-extension FileManager {
+// MARK: - Create and Delete Directories
 
+extension FileManager {
     func lookupOrCreate(directoryAt url: URL) -> Bool {
         lookupOrCreate(directoryAt: url.path)
     }
@@ -89,13 +71,4 @@ extension FileManager {
             print("Could not remove file \(error.localizedDescription)")
         }
     }
-}
-
-extension FileManager {
-    static let reelsWorkingDirectoryURL: URL = {
-        let directoryURL = documentsDirectoryURL.appendingPathComponent("videos", isDirectory: true)
-        _ = FileManager.default.lookupOrCreate(directoryAt: directoryURL)
-
-        return directoryURL
-    }()
 }

@@ -1,5 +1,5 @@
 //
-//  File.swift
+//  Haptics.swift
 //  
 //
 //  Created by Roman Rakhlin on 2/22/24.

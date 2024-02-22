@@ -30,6 +30,7 @@ struct ShareView: View {
             VStack {
                 HStack {
                     Button {
+                        Haptics.play(.light)
                         presentationMode.wrappedValue.dismiss()
                     } label: {
                         Image(systemName: "xmark")
@@ -42,6 +43,7 @@ struct ShareView: View {
                     Spacer()
                     
                     Button {
+                        Haptics.play(.medium)
                         isSuccessAlertPresented = viewModel.share()
                     } label: {
                         Image(systemName: "square.and.arrow.down.on.square")

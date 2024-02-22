@@ -55,6 +55,7 @@ struct EditorView: View {
                 VStack {
                     HStack(alignment: .center) {
                         Button {
+                            Haptics.play(.light)
                             presentationMode.wrappedValue.dismiss()
                         } label: {
                             Image(systemName: "xmark")
@@ -66,6 +67,7 @@ struct EditorView: View {
                         
                         HStack(spacing: 14) {
                             Button {
+                                Haptics.play(.light)
                                 print("Show alert to pick export resolution.")
                             } label: {
                                 Image(systemName: "gearshape")
@@ -74,6 +76,7 @@ struct EditorView: View {
                             }
                             
                             Button {
+                                Haptics.play(.heavy)
                                 playerViewModel.pause()
                                 
                                 Task(priority: .userInitiated) {
@@ -94,7 +97,7 @@ struct EditorView: View {
                             } label: {
                                 Text("Create")
                                     .foregroundColor(.black)
-                                    .font(.system(size: 18, weight: .bold, design: .rounded))
+                                    .font(.system(size: 18, weight: .semibold, design: .rounded))
                                     .padding(.vertical, 6)
                                     .padding(.horizontal, 14)
                                     .background(Color.white)
@@ -108,6 +111,8 @@ struct EditorView: View {
                     
                     HStack(alignment: .center) {
                         Button {
+                            Haptics.play(.light)
+                            
                             guard playerViewModel.assetState == .ready else { return }
                                 
                             switch playerViewModel.playbackState {
@@ -131,6 +136,7 @@ struct EditorView: View {
                         Spacer()
                         
                         Button {
+                            Haptics.play(.light)
                             playerViewModel.videoGravity = playerViewModel.videoGravity == .resizeAspect ? .resizeAspectFill : .resizeAspect
                         } label: {
                             Image(systemName: playerViewModel.videoGravity == .resizeAspect ? "arrow.up.left.and.arrow.down.right" : "arrow.down.forward.and.arrow.up.backward")
@@ -151,54 +157,78 @@ struct EditorView: View {
                 isCreatePresented: $isCreatePresented
             )
             
-            HStack(spacing: 18) {
-                Button {
-                    isCreatePresented = true
-                } label: {
-                    Image(systemName: "repeat")
-                        .font(.system(size: 24, weight: .medium, design: .rounded))
-                        .foregroundColor(.white)
-                }
+            VStack {
+                if selectedFrame != nil {
+                    HStack(spacing: 18) {
+                        Button {
+                            Haptics.play(.medium)
+                            
+                            isCreatePresented = true
+                        } label: {
+                            Image(systemName: "repeat")
+                                .font(.system(size: 24, weight: .medium, design: .rounded))
+                                .foregroundColor(.white)
+                        }
 
-                Button {
-                    guard
-                        let selectedFrame,
-                        let indexToRemove = videoViewModel.indexForItem(selectedFrame)
-                    else { return }
-                    
-                    videoViewModel.removeItem(at: indexToRemove)
-                } label: {
-                    Image(systemName: "trash")
-                        .font(.system(size: 24, weight: .regular, design: .rounded))
-                        .foregroundColor(.white)
-                }
-                
-                Button {
-                   print("Mute frame")
-                } label: {
-                    Image(systemName: "speaker.wave.3") // speaker.slash.fill
-                        .font(.system(size: 24, weight: .regular, design: .rounded))
-                        .foregroundColor(.white)
-                }
-                
-                Button {
-                   print("Crop Frame")
-                } label: {
-                    Image(systemName: "crop")
-                        .font(.system(size: 24, weight: .regular, design: .rounded))
-                        .foregroundColor(.white)
-                }
-                
-                Button {
-                   print("Trim Frame")
-                } label: {
-                    Image(systemName: "scissors")
-                        .font(.system(size: 24, weight: .regular, design: .rounded))
-                        .foregroundColor(.white)
+                        Button {
+                            Haptics.play(.medium)
+                            
+                            guard
+                                let selectedFrame,
+                                let indexToRemove = videoViewModel.indexForItem(selectedFrame)
+                            else { return }
+                            
+                            videoViewModel.removeItem(at: indexToRemove)
+                        } label: {
+                            Image(systemName: "trash")
+                                .font(.system(size: 24, weight: .regular, design: .rounded))
+                                .foregroundColor(.white)
+                        }
+                        
+                        Button {
+                            Haptics.play(.medium)
+                            
+                           print("Mute frame")
+                        } label: {
+                            Image(systemName: "speaker.wave.3") // speaker.slash.fill
+                                .font(.system(size: 24, weight: .regular, design: .rounded))
+                                .foregroundColor(.white)
+                        }
+                        
+                        Button {
+                            Haptics.play(.medium)
+                            
+                            print("Crop Frame")
+                        } label: {
+                            Image(systemName: "crop")
+                                .font(.system(size: 24, weight: .regular, design: .rounded))
+                                .foregroundColor(.white)
+                        }
+                        
+                        Button {
+                            Haptics.play(.medium)
+                            
+                            print("Trim Frame")
+                        } label: {
+                            Image(systemName: "scissors")
+                                .font(.system(size: 24, weight: .regular, design: .rounded))
+                                .foregroundColor(.white)
+                        }
+                    }
+                } else {
+                    VStack(spacing: 4) {
+                        Text("Select frame to modify it.")
+                            .font(.system(size: 16, weight: .light, design: .rounded))
+                            .foregroundColor(.white.opacity(0.5))
+                        
+                        Text("Hold frame to change the order.")
+                            .font(.system(size: 16, weight: .light, design: .rounded))
+                            .foregroundColor(.white.opacity(0.5))
+                    }
                 }
             }
-            .padding(.bottom, 22)
-            .opacity(selectedFrame == nil ? 0 : 1)
+            .frame(height: 36)
+            .padding(.bottom, 10)
         }
         .background(Constants.backgroundColor)
         .onAppear {

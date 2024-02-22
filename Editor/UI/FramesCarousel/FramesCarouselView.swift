@@ -37,6 +37,8 @@ struct FramesCarouselView: View {
                     }
                     .onTapGesture {
                         withAnimation {
+                            Haptics.play(.light)
+                            
                             selectedFrame = selectedFrame?.id == item.id ? nil : item
                         }
                     }
@@ -51,7 +53,9 @@ struct FramesCarouselView: View {
                 }
                 
                 FramesCarouselItemView(isEmptyItem: true)
-                    .onTapGesture { 
+                    .onTapGesture {
+                        Haptics.play(.medium)
+                        
                         selectedFrame = nil
                         isCreatePresented.toggle()
                     }

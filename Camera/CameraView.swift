@@ -6,9 +6,10 @@ struct CameraView: View {
     @ObservedObject var viewModel: CameraViewModel
     
     @State private var sessionIsRunning = false
-    @State private var arebuttonsBlocked = false
+    @State private var areButtonsBlocked = true
     @State private var isGalleryPickerPresented = false
     @State private var selectedAssetURL: URL?
+    @State private var isHintPresented = false
     
     private let maxVideoDuration: Int = 10
     
@@ -22,7 +23,10 @@ struct CameraView: View {
                 CameraViewControllerRepresentable()
                     .edgesIgnoringSafeArea(.all)
                     .environmentObject(viewModel)
-                    .onTapGesture(count: 2) { flipCamera() }
+                    .onTapGesture(count: 2) {
+                        Haptics.play(.rigid)
+                        flipCamera()
+                    }
             } else {
                 CameraResultView(cameraViewModel: viewModel)
                     .edgesIgnoringSafeArea(.all)
@@ -32,6 +36,7 @@ struct CameraView: View {
                 if !viewModel.isShootTaken {
                     HStack {
                         Button {
+                            Haptics.play(.light)
                             presentationMode.wrappedValue.dismiss()
                         } label: {
                             Image(systemName: "xmark")
@@ -40,11 +45,11 @@ struct CameraView: View {
                                 .background(.white)
                                 .clipShape(Circle())
                         }
-                        .disabled(arebuttonsBlocked)
                         
                         Spacer()
                         
                         Button {
+                            Haptics.play(.rigid)
                             flipCamera()
                         } label: {
                             Image(systemName: "arrow.triangle.2.circlepath.camera.fill")
@@ -53,7 +58,7 @@ struct CameraView: View {
                                 .background(.white)
                                 .clipShape(Circle())
                         }
-                        .disabled(arebuttonsBlocked)
+                        .disabled(areButtonsBlocked)
                         .opacity(sessionIsRunning == true ? 1 : 0)
                     }
                     .opacity(viewModel.isRecording ? 0 : 1)
@@ -62,7 +67,7 @@ struct CameraView: View {
                     
                     HStack(alignment: .bottom) {
                         Button {
-                            print("effect")
+                            print("Effect")
                         } label: {
                             Image(systemName: "camera.filters")
                                 .font(.system(size: 36, weight: .regular, design: .rounded))
@@ -70,27 +75,33 @@ struct CameraView: View {
                                 .shadow(radius: 4)
                         }
                         .padding(.bottom, 14)
-                        .disabled(arebuttonsBlocked)
+                        .disabled(areButtonsBlocked)
                         .opacity(0)
                         
                         Spacer()
 
                         VStack(spacing: 10) {
-                            Text("Hold to record")
-                                .foregroundColor(.white.opacity(0.8))
-                                .font(.system(size: 12, weight: .light, design: .rounded))
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 9)
-                                .background {
-                                    RoundedRectangle(cornerRadius: 12)
-                                        .fill(.black.opacity(0.2))
-                                }
+                            if isHintPresented {
+                                Text("Hold to record")
+                                    .foregroundColor(.white.opacity(0.8))
+                                    .font(.system(size: 12, weight: .light, design: .rounded))
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 9)
+                                    .background {
+                                        RoundedRectangle(cornerRadius: 12)
+                                            .fill(.black.opacity(0.2))
+                                    }
+                                    .transition(.move(edge: .bottom))
+                                    .animation(.easeInOut(duration: 0.5), value: isHintPresented)
+                            }
                             
                             Button {
                                 if viewModel.isVideo {
+                                    Haptics.play(.soft)
                                     viewModel.stopRecording()
                                     // in the end of taking video -> camera.video need to become false again
                                 } else {
+                                    Haptics.play(.medium)
                                     viewModel.takeShoot()
                                 }
                             } label: {
@@ -106,22 +117,25 @@ struct CameraView: View {
                                 
                             }
                             .simultaneousGesture(
-                                LongPressGesture(minimumDuration: 0.4).onEnded({ value in
-                                    withAnimation {
-                                        viewModel.isVideo = true
-                                    }
-                                    
-                                    viewModel.startRecordinng()
-                                })
+                                LongPressGesture(minimumDuration: 0.4)
+                                    .onEnded({ _ in
+                                        withAnimation {
+                                            viewModel.isVideo = true
+                                        }
+                                        
+                                        Haptics.play(.soft)
+                                        viewModel.startRecordinng()
+                                    })
                             )
                             .buttonStyle(.plain)
-                            .disabled(arebuttonsBlocked)
+                            .disabled(areButtonsBlocked)
                         }
                         
                         Spacer()
                         
                         Button {
-                            arebuttonsBlocked = true
+                            Haptics.play(.medium)
+                            areButtonsBlocked = true
                             isGalleryPickerPresented.toggle()
                         } label: {
                             Image(systemName: "photo.on.rectangle.angled")
@@ -130,13 +144,14 @@ struct CameraView: View {
                                 .shadow(radius: 4)
                         }
                         .padding(.bottom, 14)
-                        .disabled(arebuttonsBlocked)
+                        .disabled(areButtonsBlocked)
                         .opacity(viewModel.isRecording ? 0 : 1)
                     }
                     .opacity(sessionIsRunning == true ? 1 : 0)
                 } else {
                     HStack {
                         Button {
+                            Haptics.play(.light)
                             viewModel.retakeShoot()
                         } label: {
                             Image(systemName: "chevron.backward")
@@ -156,13 +171,13 @@ struct CameraView: View {
                         Spacer()
                         
                         Button {
+                            Haptics.play(.medium)
                             viewModel.isFinished = true
                             presentationMode.wrappedValue.dismiss()
                         } label: {
                             Text("Use this content")
                                 .foregroundColor(.black)
-                                .font(.system(size: 14, weight: .regular, design: .rounded))
-                                .kerning(0.12)
+                                .font(.system(size: 16, weight: .medium, design: .rounded))
                                 .padding(.vertical, 10)
                                 .padding(.horizontal, 20)
                                 .background(Color.white)
@@ -174,25 +189,24 @@ struct CameraView: View {
             }
             .padding(.horizontal)
             .padding(.vertical)
-            
-            if arebuttonsBlocked {
-                HStack {
-                    Spacer()
-                    VStack {
-                        Spacer()
-                        ProgressView()
-                            .progressViewStyle(.circular)
-                        Spacer()
-                    }
-                    Spacer()
-                }
-                .background(.black.opacity(0.4))
-            }
         }
         .background(.black)
         .onAppear {
             viewModel.reset()
             viewModel.controllSession(start: true)
+            
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.8) {
+                withAnimation {
+                    areButtonsBlocked = false
+                    isHintPresented = true
+                }
+                
+                DispatchQueue.main.asyncAfter(deadline: .now() + 3.4) {
+                    withAnimation {
+                        isHintPresented = false
+                    }
+                }
+            }
         }
         .onDisappear {
             viewModel.controllSession(start: false)
@@ -229,7 +243,7 @@ struct CameraView: View {
         .sheet(isPresented: $isGalleryPickerPresented) {
             GalleryPickerView(selectedAssetURL: $selectedAssetURL)
                 .edgesIgnoringSafeArea(.all)
-                .onDisappear { arebuttonsBlocked = false }
+                .onDisappear { areButtonsBlocked = false }
         }
         .onChange(of: selectedAssetURL) { newValue in
             viewModel.manuallySetPreview(newValue)

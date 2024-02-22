@@ -34,6 +34,7 @@ struct ResulItemView: View {
                         VStack {
                             HStack {
                                 Button {
+                                    Haptics.play(.light)
                                     resultToDelete = result
                                     isActionSheetPresented = true
                                 } label: {
@@ -66,6 +67,8 @@ struct ResulItemView: View {
                     }
                     .cornerRadius(24)
                     .onTapGesture {
+                        Haptics.play(.rigid)
+                        
                         guard !isActionSheetPresented else { return }
                         
                         shareViewModel.setPlayerItemWith(url: result.video)

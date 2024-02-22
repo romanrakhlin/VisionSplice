@@ -31,40 +31,57 @@ struct ProjectsView: View {
                 .padding(.bottom, 10)
                 .padding(.horizontal, 20)
                 
-                ScrollView(showsIndicators: false) {
-                    LazyVGrid(
-                        columns: Array(
-                            repeating: GridItem(.flexible(minimum: 64), spacing: 16),
-                            count: UIDevice.current.userInterfaceIdiom == .pad ? 4 : 2
-                        ),
-                        spacing: 100
-                    ) {
-                        ForEach(projectsViewModel.results, id: \.id) { result in
-                            ResulItemView(
-                                result: result, 
-                                shareViewModel: shareViewModel,
-                                isActionSheetPresented: $isActionSheetPresented,
-                                isSharePresented: $isSharePresented,
-                                resultToDelete: $resultToDelete
-                            )
+                ZStack {
+                    ScrollView(showsIndicators: false) {
+                        LazyVGrid(
+                            columns: Array(
+                                repeating: GridItem(.flexible(minimum: 64), spacing: 16),
+                                count: UIDevice.current.userInterfaceIdiom == .pad ? 4 : 2
+                            ),
+                            spacing: 100
+                        ) {
+                            ForEach(projectsViewModel.results, id: \.self) { result in
+                                ResulItemView(
+                                    result: result,
+                                    shareViewModel: shareViewModel,
+                                    isActionSheetPresented: $isActionSheetPresented,
+                                    isSharePresented: $isSharePresented,
+                                    resultToDelete: $resultToDelete
+                                )
+                            }
+                        }
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .padding(.top, 10)
+                        .padding(.horizontal, 20)
+                        
+                        Spacer(minLength: 200)
+                    }
+                    .actionSheet(isPresented: $isActionSheetPresented) {
+                        ActionSheet(title: Text("Manipulate project"), message: nil, buttons: [
+                            .destructive(Text("Delete"), action: {
+                                guard let resultToDelete else { return }
+                                
+                                projectsViewModel.delete(result: resultToDelete)
+                                self.resultToDelete = nil
+                            }),
+                            .cancel()
+                        ])
+                    }
+                    
+                    if projectsViewModel.results.isEmpty {
+                        VStack(spacing: 4) {
+                            Text("Create Your First Project")
+                                .font(.system(size: 18, weight: .light, design: .rounded))
+                                .foregroundColor(.white.opacity(0.4))
+                            
+                            Image("arrow")
+                                .resizable()
+                                .frame(width: 180, height: 180)
+                                .scaledToFit()
+                                .colorInvert()
+                                .opacity(0.4)
                         }
                     }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .padding(.top, 10)
-                    .padding(.horizontal, 20)
-                    
-                    Spacer(minLength: 200)
-                }
-                .actionSheet(isPresented: $isActionSheetPresented) {
-                    ActionSheet(title: Text("Manipulate project"), message: nil, buttons: [
-                        .destructive(Text("Delete"), action: {
-                            guard let resultToDelete else { return }
-                            
-                            projectsViewModel.delete(result: resultToDelete)
-                            self.resultToDelete = nil
-                        }),
-                        .cancel()
-                    ])
                 }
             }
             
@@ -72,6 +89,7 @@ struct ProjectsView: View {
                 Spacer()
                 
                 Button {
+                    Haptics.play(.medium)
                     isCameraPresented = true
                 } label: {
                     ZStack {

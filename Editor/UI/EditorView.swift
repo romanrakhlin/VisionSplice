@@ -22,213 +22,254 @@ struct EditorView: View {
     @State var isCreatePresented = false
     @Binding var isSharePresented: Bool
     @State var isCreateButtonEnabled = false
+    @State var isLoadingPresented = false
+    @State var isCloseAlertPresented = false
     @State private var playerView: VideoPlayerView?
     
     var sourceItem: FrameItemSource
     
     var body: some View {
-        VStack {
-            ZStack {
+        ZStack {
+            VStack {
                 ZStack {
-                    if !videoViewModel.items.isEmpty {
-                        playerView
-                    } else {
-                        HStack {
-                            Spacer()
-                            VStack {
+                    ZStack {
+                        if !videoViewModel.items.isEmpty {
+                            playerView
+                        } else {
+                            HStack {
                                 Spacer()
-                                ProgressView()
-                                    .progressViewStyle(.circular)
+                                VStack {
+                                    Spacer()
+                                    ProgressView()
+                                        .progressViewStyle(.circular)
+                                    Spacer()
+                                }
                                 Spacer()
                             }
-                            Spacer()
                         }
                     }
-                }
-                .background(Constants.secondaryColor)
-                .cornerRadius(16)
-                .padding(.top, 20)
-                .padding(.horizontal, 64)
-                
-                VStack {
-                    HStack(alignment: .center) {
-                        Button {
-                            Haptics.play(.light)
-                            presentationMode.wrappedValue.dismiss()
-                        } label: {
-                            Image(systemName: "xmark")
-                                .font(.system(size: 22, weight: .medium, design: .rounded))
-                                .foregroundColor(.white)
+                    .background(Constants.secondaryColor)
+                    .cornerRadius(16)
+                    .padding(.top, 20)
+                    .padding(.horizontal, 64)
+                    
+                    VStack {
+                        HStack(alignment: .center) {
+                            Button {
+                                Haptics.play(.light)
+                                isCloseAlertPresented = true
+                            } label: {
+                                Image(systemName: "xmark")
+                                    .font(.system(size: 22, weight: .medium, design: .rounded))
+                                    .foregroundColor(.white)
+                            }
+                            .alert("Are you sure?", isPresented: $isCloseAlertPresented) {
+                                Button("Close", role: .destructive) {
+                                    presentationMode.wrappedValue.dismiss()
+                                }
+                                Button("Cancel", role: .cancel) {}
+                            } message: {
+                                Text("All changes will be lost.")
+                            }
+                            
+                            Spacer()
+                            
+                            HStack(spacing: 14) {
+                                Button {
+                                    Haptics.play(.light)
+                                    print("Show alert to pick export resolution.")
+                                } label: {
+                                    Image(systemName: "gearshape")
+                                        .font(.system(size: 22, weight: .medium, design: .rounded))
+                                        .foregroundColor(.white)
+                                }
+                                
+                                Button {
+                                    Haptics.play(.heavy)
+                                    playerViewModel.pause()
+                                    isLoadingPresented = true
+                                    
+                                    Task(priority: .userInitiated) {
+                                        let (playerItem, videoURL, thumbnailURL) = try await videoViewModel.export()
+                                        shareViewModel.playerItem = playerItem
+                                        
+                                        let result = ResultModel(
+                                            id: UUID().uuidString,
+                                            video: videoURL,
+                                            thumbnail: thumbnailURL,
+                                            date: Date.now
+                                        )
+                                        projectsViewModel.create(result: result)
+                                        
+                                        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                                            isLoadingPresented = false
+                                            presentationMode.wrappedValue.dismiss()
+                                            isSharePresented = true
+                                        }
+                                    }
+                                } label: {
+                                    Text("Create")
+                                        .foregroundColor(.black)
+                                        .font(.system(size: 18, weight: .semibold, design: .rounded))
+                                        .padding(.vertical, 6)
+                                        .padding(.horizontal, 14)
+                                        .background(Color.white)
+                                        .clipShape(Capsule())
+                                }
+                                .disabled(!isCreateButtonEnabled)
+                            }
                         }
                         
                         Spacer()
                         
-                        HStack(spacing: 14) {
+                        HStack(alignment: .center) {
                             Button {
                                 Haptics.play(.light)
-                                print("Show alert to pick export resolution.")
+                                
+                                guard playerViewModel.assetState == .ready else { return }
+                                    
+                                switch playerViewModel.playbackState {
+                                case .stopped, .paused:
+                                    playerViewModel.play()
+                                case .playing:
+                                    playerViewModel.pause()
+                                }
                             } label: {
-                                Image(systemName: "gearshape")
-                                    .font(.system(size: 22, weight: .medium, design: .rounded))
+                                if playerViewModel.playbackState == .playing {
+                                    Image(systemName: "pause.fill")
+                                        .font(.system(size: 22, weight: .medium, design: .rounded))
+                                        .foregroundColor(.white)
+                                } else {
+                                    Image(systemName: "play.fill")
+                                        .font(.system(size: 22, weight: .medium, design: .rounded))
+                                        .foregroundColor(.white)
+                                }
+                            }
+                            
+                            Spacer()
+                            
+                            Button {
+                                Haptics.play(.light)
+                                playerViewModel.videoGravity = playerViewModel.videoGravity == .resizeAspect ? .resizeAspectFill : .resizeAspect
+                            } label: {
+                                Image(systemName: playerViewModel.videoGravity == .resizeAspect ? "arrow.up.left.and.arrow.down.right" : "arrow.down.forward.and.arrow.up.backward")
+                                    .font(.system(size: 24, weight: .medium, design: .rounded))
+                                    .foregroundColor(.white)
+                            }
+                        }
+                        .padding(.bottom, 20)
+                    }
+                    .padding(.top, 10)
+                    .padding(.horizontal, 20)
+                }
+                
+                FramesCarouselView(
+                    cameraViewModel: cameraViewModel,
+                    videoModel: videoViewModel,
+                    selectedFrame: $selectedFrame,
+                    isCreatePresented: $isCreatePresented
+                )
+                
+                VStack {
+                    if selectedFrame != nil {
+                        HStack(spacing: 18) {
+                            Button {
+                                Haptics.play(.medium)
+                                
+                                isCreatePresented = true
+                            } label: {
+                                Image(systemName: "repeat")
+                                    .font(.system(size: 24, weight: .medium, design: .rounded))
+                                    .foregroundColor(.white)
+                            }
+
+                            Button {
+                                Haptics.play(.medium)
+                                
+                                guard
+                                    let selectedFrame,
+                                    let indexToRemove = videoViewModel.indexForItem(selectedFrame)
+                                else { return }
+                                
+                                videoViewModel.removeItem(at: indexToRemove)
+                            } label: {
+                                Image(systemName: "trash")
+                                    .font(.system(size: 24, weight: .regular, design: .rounded))
                                     .foregroundColor(.white)
                             }
                             
                             Button {
-                                Haptics.play(.heavy)
-                                playerViewModel.pause()
+                                Haptics.play(.medium)
                                 
-                                Task(priority: .userInitiated) {
-                                    let (playerItem, videoURL, thumbnailURL) = try await videoViewModel.export()
-                                    shareViewModel.playerItem = playerItem
-                                    
-                                    let result = ResultModel(
-                                        id: UUID().uuidString,
-                                        video: videoURL,
-                                        thumbnail: thumbnailURL,
-                                        date: Date.now
-                                    )
-                                    projectsViewModel.create(result: result)
-                                }
-                                
-                                presentationMode.wrappedValue.dismiss()
-                                isSharePresented = true
+                               print("Mute frame")
                             } label: {
-                                Text("Create")
-                                    .foregroundColor(.black)
-                                    .font(.system(size: 18, weight: .semibold, design: .rounded))
-                                    .padding(.vertical, 6)
-                                    .padding(.horizontal, 14)
-                                    .background(Color.white)
-                                    .clipShape(Capsule())
+                                Image(systemName: "speaker.wave.3") // speaker.slash.fill
+                                    .font(.system(size: 24, weight: .regular, design: .rounded))
+                                    .foregroundColor(.white)
                             }
-                            .disabled(!isCreateButtonEnabled)
+                            
+                            Button {
+                                Haptics.play(.medium)
+                                
+                                print("Crop Frame")
+                            } label: {
+                                Image(systemName: "crop")
+                                    .font(.system(size: 24, weight: .regular, design: .rounded))
+                                    .foregroundColor(.white)
+                            }
+                            
+                            Button {
+                                Haptics.play(.medium)
+                                
+                                print("Trim Frame")
+                            } label: {
+                                Image(systemName: "scissors")
+                                    .font(.system(size: 24, weight: .regular, design: .rounded))
+                                    .foregroundColor(.white)
+                            }
                         }
+                    } else {
+                        VStack(spacing: 4) {
+                            Text("Select frame to modify it.")
+                                .font(.system(size: 16, weight: .light, design: .rounded))
+                                .foregroundColor(.white.opacity(0.5))
+                            
+                            Text("Hold frame to change the order.")
+                                .font(.system(size: 16, weight: .light, design: .rounded))
+                                .foregroundColor(.white.opacity(0.5))
+                        }
+                    }
+                }
+                .frame(height: 36)
+                .padding(.bottom, 10)
+            }
+            .background(Constants.backgroundColor)
+            
+            if isLoadingPresented {
+                VStack {
+                    Spacer()
+                    
+                    HStack {
+                        Spacer()
+                        
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 10)
+                                .fill(.thickMaterial)
+                                .frame(width: 82, height: 82)
+                            
+                            ProgressView()
+                                .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                .scaleEffect(1.4, anchor: .center)
+                        }
+                        
+                        Spacer()
                     }
                     
                     Spacer()
-                    
-                    HStack(alignment: .center) {
-                        Button {
-                            Haptics.play(.light)
-                            
-                            guard playerViewModel.assetState == .ready else { return }
-                                
-                            switch playerViewModel.playbackState {
-                            case .stopped, .paused:
-                                playerViewModel.play()
-                            case .playing:
-                                playerViewModel.pause()
-                            }
-                        } label: {
-                            if playerViewModel.playbackState == .playing {
-                                Image(systemName: "pause.fill")
-                                    .font(.system(size: 22, weight: .medium, design: .rounded))
-                                    .foregroundColor(.white)
-                            } else {
-                                Image(systemName: "play.fill")
-                                    .font(.system(size: 22, weight: .medium, design: .rounded))
-                                    .foregroundColor(.white)
-                            }
-                        }
-                        
-                        Spacer()
-                        
-                        Button {
-                            Haptics.play(.light)
-                            playerViewModel.videoGravity = playerViewModel.videoGravity == .resizeAspect ? .resizeAspectFill : .resizeAspect
-                        } label: {
-                            Image(systemName: playerViewModel.videoGravity == .resizeAspect ? "arrow.up.left.and.arrow.down.right" : "arrow.down.forward.and.arrow.up.backward")
-                                .font(.system(size: 24, weight: .medium, design: .rounded))
-                                .foregroundColor(.white)
-                        }
-                    }
-                    .padding(.bottom, 20)
                 }
-                .padding(.top, 10)
-                .padding(.horizontal, 20)
+                .background(.black.opacity(0.3))
             }
-            
-            FramesCarouselView(
-                cameraViewModel: cameraViewModel,
-                videoModel: videoViewModel,
-                selectedFrame: $selectedFrame,
-                isCreatePresented: $isCreatePresented
-            )
-            
-            VStack {
-                if selectedFrame != nil {
-                    HStack(spacing: 18) {
-                        Button {
-                            Haptics.play(.medium)
-                            
-                            isCreatePresented = true
-                        } label: {
-                            Image(systemName: "repeat")
-                                .font(.system(size: 24, weight: .medium, design: .rounded))
-                                .foregroundColor(.white)
-                        }
-
-                        Button {
-                            Haptics.play(.medium)
-                            
-                            guard
-                                let selectedFrame,
-                                let indexToRemove = videoViewModel.indexForItem(selectedFrame)
-                            else { return }
-                            
-                            videoViewModel.removeItem(at: indexToRemove)
-                        } label: {
-                            Image(systemName: "trash")
-                                .font(.system(size: 24, weight: .regular, design: .rounded))
-                                .foregroundColor(.white)
-                        }
-                        
-                        Button {
-                            Haptics.play(.medium)
-                            
-                           print("Mute frame")
-                        } label: {
-                            Image(systemName: "speaker.wave.3") // speaker.slash.fill
-                                .font(.system(size: 24, weight: .regular, design: .rounded))
-                                .foregroundColor(.white)
-                        }
-                        
-                        Button {
-                            Haptics.play(.medium)
-                            
-                            print("Crop Frame")
-                        } label: {
-                            Image(systemName: "crop")
-                                .font(.system(size: 24, weight: .regular, design: .rounded))
-                                .foregroundColor(.white)
-                        }
-                        
-                        Button {
-                            Haptics.play(.medium)
-                            
-                            print("Trim Frame")
-                        } label: {
-                            Image(systemName: "scissors")
-                                .font(.system(size: 24, weight: .regular, design: .rounded))
-                                .foregroundColor(.white)
-                        }
-                    }
-                } else {
-                    VStack(spacing: 4) {
-                        Text("Select frame to modify it.")
-                            .font(.system(size: 16, weight: .light, design: .rounded))
-                            .foregroundColor(.white.opacity(0.5))
-                        
-                        Text("Hold frame to change the order.")
-                            .font(.system(size: 16, weight: .light, design: .rounded))
-                            .foregroundColor(.white.opacity(0.5))
-                    }
-                }
-            }
-            .frame(height: 36)
-            .padding(.bottom, 10)
         }
-        .background(Constants.backgroundColor)
         .onAppear {
             videoViewModel.onStartingRegeneration = {
                 playerViewModel.stop()

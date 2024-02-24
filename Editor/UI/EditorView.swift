@@ -25,6 +25,8 @@ struct EditorView: View {
     @State var isLoadingPresented = false
     @State var isCloseAlertPresented = false
     @State private var playerView: VideoPlayerView?
+    @State private var isErrorAlertPresented = false
+    @State private var errorAlertTitle: String?
     
     var sourceItem: FrameItemSource
     
@@ -90,21 +92,29 @@ struct EditorView: View {
                                     isLoadingPresented = true
                                     
                                     Task(priority: .userInitiated) {
-                                        let (playerItem, videoURL, thumbnailURL) = try await videoViewModel.export()
-                                        shareViewModel.playerItem = playerItem
-                                        
-                                        let result = ResultModel(
-                                            id: UUID().uuidString,
-                                            video: videoURL,
-                                            thumbnail: thumbnailURL,
-                                            date: Date.now
-                                        )
-                                        projectsViewModel.create(result: result)
-                                        
-                                        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                                        do {
+                                            let (playerItem, videoURL, thumbnailURL) = try await videoViewModel.export()
+
+                                            shareViewModel.playerItem = playerItem
+                                            
+                                            let result = ResultModel(
+                                                id: UUID().uuidString,
+                                                video: videoURL,
+                                                thumbnail: thumbnailURL,
+                                                date: Date.now
+                                            )
+                                            projectsViewModel.create(result: result)
+                                            
+                                            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                                                isLoadingPresented = false
+                                                presentationMode.wrappedValue.dismiss()
+                                                isSharePresented = true
+                                            }
+                                        } catch {
+                                            print(error)
+                                            errorAlertTitle = "Export Failed"
                                             isLoadingPresented = false
-                                            presentationMode.wrappedValue.dismiss()
-                                            isSharePresented = true
+                                            isErrorAlertPresented = true
                                         }
                                     }
                                 } label: {
@@ -311,6 +321,11 @@ struct EditorView: View {
         .onChange(of: isCreatePresented) { isCreatePresented in
             isCreatePresented ? playerViewModel.pause() : playerViewModel.play()
         }
+        .alert(errorAlertTitle ?? "Error Occured", isPresented: $isErrorAlertPresented) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("Try one more time.")
+        }
     }
     
     private func appendItem(with sourceItem: FrameItemSource) {
@@ -319,10 +334,8 @@ struct EditorView: View {
                 try await videoViewModel.append(from: sourceItem)
             } catch {
                 let nsError = error as NSError
-                let description = nsError.localizedRecoverySuggestion ?? nsError.localizedDescription
-
-                // TODO: - show fail alert here
-                assertionFailure(error.localizedDescription)
+                let description = (nsError).localizedRecoverySuggestion ?? nsError.localizedDescription
+                errorAlertTitle = description
             }
             
             if videoViewModel.items.count == 1 {
@@ -340,9 +353,7 @@ struct EditorView: View {
             } catch {
                 let nsError = error as NSError
                 let description = nsError.localizedRecoverySuggestion ?? nsError.localizedDescription
-
-                // TODO: - show fail alert here
-                assertionFailure(error.localizedDescription)
+                errorAlertTitle = description
             }
         }
     }

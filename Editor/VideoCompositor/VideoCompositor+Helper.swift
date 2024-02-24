@@ -19,10 +19,7 @@ extension VideoCompositor {
             .appendingPathExtension("mp4")
         FileManager.default.deleteIfExists(at: outputVideoFileURL)
 
-        let exportSession = AVAssetExportSession(
-            asset: asset,
-            presetName: quality.presetName
-        )!
+        let exportSession = AVAssetExportSession(asset: asset, presetName: quality.presetName)!
         exportSession.outputURL = outputVideoFileURL
         exportSession.outputFileType = .mp4
         exportSession.shouldOptimizeForNetworkUse = true

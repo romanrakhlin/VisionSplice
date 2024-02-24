@@ -48,10 +48,10 @@ class FrameImageItem: FrameItem {
             outputName: UUID().uuidString
         )
 
-        let urlAsset = AVURLAsset(url: url)
-        generatedAsset = urlAsset
+        let asset = AVAsset(url: url)
+        generatedAsset = asset
 
-        return urlAsset
+        return asset
     }
 
     func generateThumbnail() async throws -> UIImage {

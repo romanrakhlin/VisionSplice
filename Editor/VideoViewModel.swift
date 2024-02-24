@@ -16,6 +16,7 @@ final class VideoViewModel: ObservableObject {
         case indexOutOfRange
         case compositionVideoTrackFailed
         case invalidVideoAsset(_ asset: AVAsset)
+        case exportError
     }
 
     let previewConfigiration: VideoConfigiration = .preview
@@ -209,7 +210,35 @@ extension VideoViewModel {
 
 extension VideoViewModel {
     public func export() async throws -> (AVPlayerItem, URL, URL) {
-        // handle video
+        let composition = AVMutableComposition()
+
+        // Setup video & audio tracks
+        guard
+            let videoTrack = composition.addMutableTrack(withMediaType: .video, preferredTrackID: kCMPersistentTrackID_Invalid),
+            let audioTrack = composition.addMutableTrack(withMediaType: .audio, preferredTrackID: kCMPersistentTrackID_Invalid)
+        else {
+            throw Error.exportError
+        }
+
+        // Copy tracks to new composition
+        for item in items {
+            let asset = try await item.generateAsset(config: exportConfigiration)
+            let insertDuration = composition.duration
+            
+            if let assetVideoTrack = try await asset.loadTracks(withMediaType: .video).first {
+                let trackDuration = try await assetVideoTrack.load(.timeRange).duration
+                let timeRange = CMTimeRange(start: .zero, end: trackDuration)
+                try videoTrack.insertTimeRange(timeRange, of: assetVideoTrack, at: insertDuration)
+            }
+            
+            if let assetAudioTrack = try await asset.loadTracks(withMediaType: .audio).first {
+                let trackDuration = try await assetAudioTrack.load(.timeRange).duration
+                let timeRange = CMTimeRange(start: .zero, end: trackDuration)
+                try audioTrack.insertTimeRange(timeRange, of: assetAudioTrack, at: insertDuration)
+            }
+        }
+        
+        // Export compostion
         let (exportSession, outputVideoFileURL) = VideoCompositor
             .prepareDefaultExportSessionAndFileURL(
                 asset: composition,
@@ -219,9 +248,10 @@ extension VideoViewModel {
             )
         
         await exportSession.export()
+        
         if let error = exportSession.error { throw error }
         
-        // handle thunmbail
+        // Create thunmbail
         let thumbnail = try await items[0].generateThumbnail()
         let thumbnailData = thumbnail.pngData()
         let thumbnailURL = exportConfigiration.exportDirectoryURL
@@ -253,22 +283,14 @@ extension VideoViewModel {
         if let videoTrack = try await asset.loadTracks(withMediaType: .video).first {
             let startTime = startTimeForIndex(index)
             
-            let videoTrackTimeRange = try await videoTrack.load(.timeRange)
+            let videoTimeRange = CMTimeRange(start: .zero, duration: try await videoTrack.load(.timeRange).duration)
             let mutableVideoTrack = compositionDefaultTrack(for: videoTrack.mediaType)
-            try mutableVideoTrack?.insertTimeRange(
-                CMTimeRange(start: .zero, duration: videoTrackTimeRange.duration),
-                of: videoTrack,
-                at: startTime
-            )
+            try mutableVideoTrack?.insertTimeRange(videoTimeRange, of: videoTrack, at: startTime)
             
             if let audioTrack = try await asset.loadTracks(withMediaType: .audio).first {
-                let audioTrackTimeRange = try await audioTrack.load(.timeRange)
+                let audioTimeRange = CMTimeRange(start: .zero, duration: try await audioTrack.load(.timeRange).duration)
                 let mutableAudioTrack = compositionDefaultTrack(for: audioTrack.mediaType)
-                try mutableAudioTrack?.insertTimeRange(
-                    CMTimeRange(start: .zero, duration: audioTrackTimeRange.duration),
-                    of: audioTrack,
-                    at: startTime
-                )
+                try mutableAudioTrack?.insertTimeRange(audioTimeRange, of: audioTrack, at: startTime)
             }
         }
     }
@@ -285,18 +307,18 @@ extension VideoViewModel {
                 CMTimeRange(start: .zero, duration: compositionAudioTrack.timeRange.duration)
             )
         }
-
+        
         for (index, item) in items.enumerated() {
             try await resolveItem(item, at: index)
         }
     }
-
+    
     private func startTimeForIndex(_ index: Int) -> CMTime {
         return items.prefix(upTo: index).reduce(CMTime.zero) { partialResult, reelItem in
             CMTimeAdd(partialResult, reelItem.duration)
         }
     }
-
+    
     private func endTimeForIndex(_ index: Int) -> CMTime {
         assert(index >= 0 && index < items.count, "Index out of range")
         return items.prefix(through: index).reduce(CMTime.zero) { partialResult, reelItem in

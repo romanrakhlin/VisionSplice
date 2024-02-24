@@ -13,4 +13,9 @@ enum Constants {
     static let secondaryColor = Color("secondary", bundle: .module)
     static let primaryColor = Color("primary", bundle: .module)
     static let redColor = Color("red", bundle: .module)
+    
+    // Orientation
+    static var orientation: UIInterfaceOrientation? {
+        UIApplication.shared.windows.first?.windowScene?.interfaceOrientation
+    }
 }

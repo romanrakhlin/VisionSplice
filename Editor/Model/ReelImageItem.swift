@@ -30,18 +30,18 @@ class FrameImageItem: FrameItem {
     }
 
     func generateAsset(config: VideoConfigiration) async throws -> AVAsset {
-        if let generatedAsset, generatedAsset.videoSize == config.videoSize {
+        if let generatedAsset, generatedAsset.videoSize == config.videoSize.size {
             return generatedAsset
         }
 
-        guard let pixelBuffer = image.resized(toFill: config.videoSize).pixelBuffer() else {
+        guard let pixelBuffer = image.resized(toFill: config.videoSize.size).pixelBuffer() else {
             throw Error.failedToCreatePixelBuffer
         }
 
         let url = try await VideoCompositor.makeStillVideo(
             fromImage: pixelBuffer,
             duration: duration.seconds,
-            renderSize: config.videoSize,
+            renderSize: config.videoSize.size,
             fps: config.fps,
             bitrate: config.bitrate,
             storeDirectory: config.workingDirectoryURL,

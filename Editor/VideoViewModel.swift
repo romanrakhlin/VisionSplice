@@ -18,9 +18,9 @@ final class VideoViewModel: ObservableObject {
         case invalidVideoAsset(_ asset: AVAsset)
         case exportError
     }
-
-    let previewConfigiration: VideoConfigiration = .preview
-    let exportConfigiration: VideoConfigiration = .export
+    
+    let previewConfigiration = VideoConfigiration.createConfiguration()
+    let exportConfigiration = VideoConfigiration.createConfiguration(isExport: true)
     
     @Published private(set) var isRegeneratingComposition: CurrentValueSubject<Bool, Never> = .init(false)
     @Published private(set) var items: [any FrameItem] = []

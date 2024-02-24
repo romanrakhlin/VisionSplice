@@ -32,7 +32,7 @@ final class FrameVideoItem: FrameItem {
     }
 
     func generateAsset(config: VideoConfigiration) async throws -> AVAsset {
-        if let generatedAsset, generatedAsset.videoSize == config.videoSize {
+        if let generatedAsset, generatedAsset.videoSize == config.videoSize.size {
             return generatedAsset
         }
 
@@ -48,7 +48,7 @@ final class FrameVideoItem: FrameItem {
 
         let resizeComposition = VideoEditor.videoComposition(
             for: videoTrack,
-            aspectFillSize: config.videoSize,
+            aspectFillSize: config.videoSize.size,
             framesPerSecond: config.fps,
             timeRange: CMTimeRange(start: .zero, duration: duration)
         )

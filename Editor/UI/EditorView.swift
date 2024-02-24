@@ -76,58 +76,47 @@ struct EditorView: View {
                             
                             Spacer()
                             
-                            HStack(spacing: 14) {
-                                Button {
-                                    Haptics.play(.light)
-                                    print("Show alert to pick export resolution.")
-                                } label: {
-                                    Image(systemName: "gearshape")
-                                        .font(.system(size: 22, weight: .medium, design: .rounded))
-                                        .foregroundColor(.white)
-                                }
+                            Button {
+                                Haptics.play(.heavy)
+                                playerViewModel.pause()
+                                isLoadingPresented = true
                                 
-                                Button {
-                                    Haptics.play(.heavy)
-                                    playerViewModel.pause()
-                                    isLoadingPresented = true
-                                    
-                                    Task(priority: .userInitiated) {
-                                        do {
-                                            let (playerItem, videoURL, thumbnailURL) = try await videoViewModel.export()
+                                Task(priority: .userInitiated) {
+                                    do {
+                                        let (playerItem, videoURL, thumbnailURL) = try await videoViewModel.export()
 
-                                            shareViewModel.playerItem = playerItem
-                                            
-                                            let result = ResultModel(
-                                                id: UUID().uuidString,
-                                                video: videoURL,
-                                                thumbnail: thumbnailURL,
-                                                date: Date.now
-                                            )
-                                            projectsViewModel.create(result: result)
-                                            
-                                            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-                                                isLoadingPresented = false
-                                                presentationMode.wrappedValue.dismiss()
-                                                isSharePresented = true
-                                            }
-                                        } catch {
-                                            print(error)
-                                            errorAlertTitle = "Export Failed"
+                                        shareViewModel.playerItem = playerItem
+                                        
+                                        let result = ResultModel(
+                                            id: UUID().uuidString,
+                                            video: videoURL,
+                                            thumbnail: thumbnailURL,
+                                            date: Date.now
+                                        )
+                                        projectsViewModel.create(result: result)
+                                        
+                                        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
                                             isLoadingPresented = false
-                                            isErrorAlertPresented = true
+                                            presentationMode.wrappedValue.dismiss()
+                                            isSharePresented = true
                                         }
+                                    } catch {
+                                        print(error)
+                                        errorAlertTitle = "Export Failed"
+                                        isLoadingPresented = false
+                                        isErrorAlertPresented = true
                                     }
-                                } label: {
-                                    Text("Create")
-                                        .foregroundColor(.black)
-                                        .font(.system(size: 18, weight: .semibold, design: .rounded))
-                                        .padding(.vertical, 6)
-                                        .padding(.horizontal, 14)
-                                        .background(Color.white)
-                                        .clipShape(Capsule())
                                 }
-                                .disabled(!isCreateButtonEnabled)
+                            } label: {
+                                Text("Create")
+                                    .foregroundColor(.black)
+                                    .font(.system(size: 18, weight: .semibold, design: .rounded))
+                                    .padding(.vertical, 6)
+                                    .padding(.horizontal, 14)
+                                    .background(Color.white)
+                                    .clipShape(Capsule())
                             }
+                            .disabled(!isCreateButtonEnabled)
                         }
                         
                         Spacer()

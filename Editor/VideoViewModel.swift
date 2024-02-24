@@ -152,15 +152,15 @@ extension VideoViewModel {
         let assetDuration = try await asset.load(.duration)
         let assetTimeRange = CMTimeRange(start: .zero, duration: assetDuration)
         let timeRange = CMTimeRange(start: startTimeForIndex(index), duration: assetTimeRange.duration)
-        
+
         if let videoTrack = try await asset.loadTracks(withMediaType: .video).first {
             let mutableVideoTrack = compositionDefaultTrack(for: videoTrack.mediaType)
             mutableVideoTrack?.removeTimeRange(timeRange)
-            
-            if let audioTrack = try await asset.loadTracks(withMediaType: .audio).first {
-                let mutableAudioTrack = compositionDefaultTrack(for: audioTrack.mediaType)
-                mutableAudioTrack?.removeTimeRange(timeRange)
-            }
+        }
+        
+        if let audioTrack = try await asset.loadTracks(withMediaType: .audio).first {
+            let mutableAudioTrack = compositionDefaultTrack(for: audioTrack.mediaType)
+            mutableAudioTrack?.removeTimeRange(timeRange)
         }
         
         try await insertVideo(asset, at: index)
@@ -280,18 +280,20 @@ extension VideoViewModel {
     }
     
     private func insertVideo(_ asset: AVAsset, at index: Int) async throws {
-        if let videoTrack = try await asset.loadTracks(withMediaType: .video).first {
-            let startTime = startTimeForIndex(index)
-            
-            let videoTimeRange = CMTimeRange(start: .zero, duration: try await videoTrack.load(.timeRange).duration)
-            let mutableVideoTrack = compositionDefaultTrack(for: videoTrack.mediaType)
-            try mutableVideoTrack?.insertTimeRange(videoTimeRange, of: videoTrack, at: startTime)
-            
-            if let audioTrack = try await asset.loadTracks(withMediaType: .audio).first {
-                let audioTimeRange = CMTimeRange(start: .zero, duration: try await audioTrack.load(.timeRange).duration)
-                let mutableAudioTrack = compositionDefaultTrack(for: audioTrack.mediaType)
-                try mutableAudioTrack?.insertTimeRange(audioTimeRange, of: audioTrack, at: startTime)
-            }
+        let startTime = startTimeForIndex(index)
+        
+        for assetTrack in try await asset.loadTracks(withMediaType: .video) {
+            let trackTimeRange = try await assetTrack.load(.timeRange)
+            let timeRange = CMTimeRange(start: .zero, duration: trackTimeRange.duration)
+            let mutableTrack = compositionDefaultTrack(for: assetTrack.mediaType)
+            try mutableTrack?.insertTimeRange(timeRange, of: assetTrack, at: startTime)
+        }
+        
+        for assetTrack in try await asset.loadTracks(withMediaType: .audio) {
+            let trackTimeRange = try await assetTrack.load(.timeRange)
+            let timeRange = CMTimeRange(start: .zero, duration: trackTimeRange.duration)
+            let mutableTrack = compositionDefaultTrack(for: assetTrack.mediaType)
+            try mutableTrack?.insertTimeRange(timeRange, of: assetTrack, at: startTime)
         }
     }
     
